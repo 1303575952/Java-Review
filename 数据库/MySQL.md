@@ -661,15 +661,15 @@ Show Profile是MySQL提供可以用来分析当前会话中语句执行的资源
   2、开启：set profiling=on;
   3、查看结果：show profiles;
   4、诊断SQL：show profile cpu,block io for query 上一步SQL数字号码;
-    ALL：显示所有开销信息
-    BLOCK IO：显示IO相关开销
-    CONTEXT SWITCHES：显示上下文切换相关开销
-    CPU：显示CPU相关开销
-    IPC：显示发送接收相关开销
-    MEMORY：显示内存相关开销
-    PAGE FAULTS：显示页面错误相关开销
-    SOURCE：显示和Source_function，Source_file，Source_line相关开销
-    SWAPS：显示交换次数相关开销
+​    ALL：显示所有开销信息
+​    BLOCK IO：显示IO相关开销
+​    CONTEXT SWITCHES：显示上下文切换相关开销
+​    CPU：显示CPU相关开销
+​    IPC：显示发送接收相关开销
+​    MEMORY：显示内存相关开销
+​    PAGE FAULTS：显示页面错误相关开销
+​    SOURCE：显示和Source_function，Source_file，Source_line相关开销
+​    SWAPS：显示交换次数相关开销
 注意（遇到这几种情况要优化）
   converting HEAP to MyISAM： 查询结果太大，内存不够用往磁盘上搬
   Creating tmp table：创建临时表
@@ -680,3 +680,14 @@ Show Profile是MySQL提供可以用来分析当前会话中语句执行的资源
 
 当order by 和 group by无法使用索引时，增大max_length_for_sort_data参数设置和增大sort_buffer_size参数的设置
 
+## 优化数据访问
+
+### 1. 减少请求的数据量
+
+- 只返回必要的列：最好不要使用 SELECT * 语句。
+- 只返回必要的行：使用 LIMIT 语句来限制返回的数据。
+- 缓存重复查询的数据：使用缓存可以避免在数据库中进行查询，特别在要查询的数据经常被重复查询时，缓存带来的查询性能提升将会是非常明显的。
+
+### 2. 减少服务器端扫描的行数
+
+最有效的方式是使用索引来覆盖查询。
