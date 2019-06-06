@@ -91,3 +91,25 @@ DELETE /idX/delete HTTP/1.1   -> Returns 404
 - 在使用 XMLHttpRequest 的 POST 方法时，浏览器会先发送 Header 再发送 Data。但并不是所有浏览器会这么做，例如火狐就不会。
 - 而 GET 方法 Header 和 Data 会一起发送。
 
+## 在浏览器中输入url地址 ->> 显示主页的过程
+
+百度好像最喜欢问这个问题。
+
+> 打开一个网页，整个过程会使用哪些协议
+
+图解（图片来源：《图解HTTP》）：
+
+![一次URL请求](pic/一次URL请求.png)
+
+总体来说分为以下几个过程:
+
+1. DNS解析
+2. TCP连接
+3. 发送HTTP请求
+4. 服务器处理请求并返回HTTP报文
+5. 浏览器解析渲染页面
+6. 连接结束
+
+具体可以参考下面这篇文章：
+
+- <https://segmentfault.com/a/1190000006879700>
