@@ -1,10 +1,10 @@
 # Java并发
 
-## 1.线程状态转换
+## 线程状态转换
 
 ![线程状态转换](pic/线程状态转换.png)
 
-## 2.线程池
+## 线程池
 
 ### 研读ThreadPoolExecutor
 
@@ -167,7 +167,172 @@ schedultWithFixedDelay:是以固定的延时去执行任务，延时是指上一
 
 **线程池大小=NCPU \*UCPU(1+W/C)**
 
-## 3.互斥同步（synchronized和ReentrantLock）
+## 控制线程执行的顺序
+
+**方法一：join**
+```Java
+public class Test {
+	public static void main(String[] args) throws InterruptedException {
+		Thread t1 = new Thread(new MyThread1());
+		Thread t2 = new Thread(new MyThread2());
+		Thread t3 = new Thread(new MyThread3());
+		t1.start();
+		t1.join();
+		t2.start();
+		t2.join();
+		t3.start();
+	}
+}
+
+class MyThread1 implements Runnable {
+	@Override
+	public void run() {
+		System.out.println("I am thread 1");
+	}
+}
+
+class MyThread2 implements Runnable {
+	@Override
+	public void run() {
+		System.out.println("I am thread 2");
+	}
+}
+
+class MyThread3 implements Runnable {
+	@Override
+	public void run() {
+		System.out.println("I am thread 3");
+	}
+}
+```
+join方法：让主线程等待子线程运行结束后再继续运行
+
+有了join方法的帮忙，线程123就能按照指定的顺序执行了。
+
+我们来看看示例当中主线程与子线程的执行顺序。在main方法中，先是调用了t1.start方法，启动t1线程，随后调用t1的join方法，main所在的主线程就需要等待t1子线程中的run方法运行完成后才能继续运行，所以主线程卡在t2.start方法之前等待t1程序。等t1运行完后，主线程重新获得主动权，继续运行t2.start和t2.join方法，与t1子线程类似，main主线程等待t2完成后继续执行，如此执行下去，join方法就有效的解决了执行顺序问题。因为在同一个时间点，各个线程是同步状态。
+
+当然解决方法不止一个：
+
+**方法二：Excutors.newSingleThreadExecutor()**
+
+```Java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class Test {
+	private static ExecutorService executor = Executors.newSingleThreadExecutor();
+
+	public static void main(String[] args) throws InterruptedException {
+		Thread t1 = new Thread(new MyThread1());
+		Thread t2 = new Thread(new MyThread2());
+		Thread t3 = new Thread(new MyThread3());
+		executor.submit(t1);
+		executor.submit(t2);
+		executor.submit(t3);
+		executor.shutdown();
+	}
+}
+
+class MyThread1 implements Runnable {
+	@Override
+	public void run() {
+		System.out.println("I am thread 1");
+	}
+}
+
+class MyThread2 implements Runnable {
+	@Override
+	public void run() {
+		System.out.println("I am thread 2");
+	}
+}
+
+class MyThread3 implements Runnable {
+	@Override
+	public void run() {
+		System.out.println("I am thread 3");
+	}
+}
+```
+利用并发包里的Excutors的newSingleThreadExecutor产生一个单线程的线程池，而这个线程池的底层原理就是一个先进先出（FIFO）的队列。代码中executor.submit依次添加了123线程，按照FIFO的特性，执行顺序也就是123的执行结果，从而保证了执行顺序。
+
+**方法三：wait()和notify()**
+```Java
+public class QueueThread implements Runnable{
+	private Object current;
+	private Object next;
+	private int max=100;
+	private String word;
+	public QueueThread(Object current, Object next, String word) {
+		this.current = current;
+		this.next = next;
+		this.word = word;
+	}
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		for(int i=0;i<max;i++){
+			synchronized (current) {
+				synchronized (next) {
+					System.out.println(word);
+					next.notify();
+				}
+				try {
+					current.wait();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		//必须做一下这样处理，否则thread1-thread4停不了
+		synchronized (next) {
+			next.notify();
+			System.out.println(Thread.currentThread().getName()+"执行完毕");
+		}
+	}
+	
+    public static void main(String[] args) throws InterruptedException {
+		long startTime = System.currentTimeMillis();
+		Object a = new Object();
+		Object b = new Object();
+		Object c = new Object();
+		Object d = new Object();
+		Object e = new Object();
+		//之所以每次当前线程都要sleep(10)是为了保证线程的执行顺序
+		new Thread(new QueueThread(a,b,"a")).start();
+		Thread.sleep(10);
+		new Thread(new QueueThread(b,c,"b")).start();
+		Thread.sleep(10);
+		new Thread(new QueueThread(c,d,"c")).start();
+		Thread.sleep(10);
+		new Thread(new QueueThread(d,e,"d")).start();
+		Thread.sleep(10);
+		Thread thread4 = new Thread(new QueueThread(e,a,"e"));
+		thread4.start();
+		thread4.join();
+        //因为线程0-4停止是依次执行的，所以如果保证主线程在线程4后停止，那么就能保证主线程是最后关闭的
+		System.out.println("程序耗时："+ (System.currentTimeMillis()-startTime ));
+	}
+}
+```
+首先，我们保证了线程0-线程4依次启动，并设置了Thread.sleep(10)，保证线程0-4依次执行他们的run方法。
+
+其次，我们看QueueThread的run()便可知：1.线程获得current锁，2.获得next锁。3.打印并notify拥有next锁的一个对象4.线程执行current.wait(),释放current锁对象，并使线程处于阻塞状态。
+
+然后，假设已经执行到了thread-4的run方法，那么此时的情况是这样的：
+
+线程0处于阻塞状态，需要a.notify()才能使其回到runnale状态
+
+线程1处于阻塞状态，需要b.notify()才能使其回到runnale状态
+
+线程2处于阻塞状态，需要c.notify()才能使其回到runnale状态
+
+线程3处于阻塞状态，需要d.notify()才能使其回到runnale状态
+
+而线程4恰好可以需要执行a.notify()，所以能够使线程0回到runnale状态。然后执行e,wait()方法，使自身线程阻塞，需要e.notify()才能唤醒。
+
+## 互斥同步（synchronized和ReentrantLock）
 
 Java 提供了两种锁机制来控制多个线程对共享资源的互斥访问，第一个是 JVM 实现的 synchronized，而另一个是 JDK 实现的 ReentrantLock。
 
@@ -340,7 +505,7 @@ synchronized 中的锁是非公平的，ReentrantLock 默认情况下也是非�
 
 除非需要使用 ReentrantLock 的高级功能，否则优先使用 synchronized。这是因为 synchronized 是 JVM 实现的一种锁机制，JVM 原生地支持它，而 ReentrantLock 不是所有的 JDK 版本都支持。并且使用 synchronized 不用担心没有释放锁而导致死锁问题，因为 JVM 会确保锁的释放。
 
-## 4.J.U.C-AQS
+## J.U.C-AQS
 
 java.util.concurrent（J.U.C）大大提高了并发性能，AQS 被认为是 J.U.C 的核心。
 
@@ -460,7 +625,7 @@ public class SemaphoreExample {
 2 1 2 2 2 2 2 1 2 2
 ```
 
-## 5.**使用 BlockingQueue 实现生产者消费者问题**
+## 使用 BlockingQueue 实现生产者消费者问题
 
 ```Java
 public class ProducerConsumer {
@@ -511,7 +676,7 @@ public static void main(String[] args) {
 produce..produce..consume..consume..produce..consume..produce..consume..produce..consume..
 ```
 
-## 6.非阻塞同步
+## 非阻塞同步
 
 互斥同步最主要的问题就是线程阻塞和唤醒所带来的性能问题，因此这种同步也称为阻塞同步。
 
@@ -566,7 +731,7 @@ public final int getAndAddInt(Object var1, long var2, int var4) {
 
 J.U.C 包提供了一个带有标记的原子引用类 AtomicStampedReference 来解决这个问题，它可以通过控制变量值的版本来保证 CAS 的正确性。大部分情况下 ABA 问题不会影响程序并发的正确性，如果需要解决 ABA 问题，改用传统的互斥同步可能会比原子类更高效。
 
-## 7.JDK1.6 之后的底层优化
+## JDK1.6 之后的底层优化
 
 JDK1.6 对锁的实现引入了大量的优化，如偏向锁、轻量级锁、自旋锁、适应性自旋锁、锁消除、锁粗化等技术来减少锁操作的开销。
 
@@ -612,7 +777,7 @@ JDK1.6 对锁的实现引入了大量的优化，如偏向锁、轻量级锁、�
 
 大部分情况下，上面的原则都是没有问题的，但是如果一系列的连续操作都对同一个对象反复加锁和解锁，那么会带来很多不必要的性能消耗。
 
-## 8.ThreadLocal
+## ThreadLocal
 
 ### 1. ThreadLocal简介
 
@@ -766,7 +931,7 @@ ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
 >
 > 弱引用可以和一个引用队列（ReferenceQueue）联合使用，如果弱引用所引用的对象被垃圾回收，Java虚拟机就会把这个弱引用加入到与之关联的引用队列中。
 
-## 9.Java 内存模型
+## Java 内存模型
 
 Java 内存模型试图屏蔽各种硬件和操作系统的内存访问差异，以实现让 Java 程序在各种平台下都能达到一致的内存访问效果。
 
