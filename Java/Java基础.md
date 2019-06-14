@@ -258,6 +258,52 @@ Class 和 java.lang.reflect 一起对反射提供了支持，java.lang.reflect �
 - **安全限制** ：使用反射技术要求程序必须在一个没有安全限制的环境中运行。如果一个程序必须在有安全限制的环境中运行，如 Applet，那么这就是个问题了。
 - **内部暴露** ：由于反射允许代码执行一些在正常情况下不被允许的操作（比如访问私有的属性和方法），所以使用反射可能会导致意料之外的副作用，这可能导致代码功能失调并破坏可移植性。反射代码破坏了抽象性，因此当平台发生改变的时候，代码的行为就有可能也随着变化。
 
+### 反射中Class.forName()和ClassLoader.loadClass()的区别
+
+**Java类装载过程**
+
+![类装载过程](pic/类装载过程.png)
+
+装载：通过累的全限定名获取二进制字节流，将二进制字节流转换成方法区中的运行时数据结构，在内存中生成Java.lang.class对象； 
+
+链接：执行下面的校验、准备和解析步骤，其中解析步骤是可以选择的； 
+
+　　校验：检查导入类或接口的二进制数据的正确性；（文件格式验证，元数据验证，字节码验证，符号引用验证） 
+
+　　准备：给类的静态变量分配并初始化存储空间； 
+
+　　解析：将常量池中的符号引用转成直接引用； 
+
+初始化：激活类的静态变量的初始化Java代码和静态Java代码块，并初始化程序员设置的变量值。
+
+**分析 Class.forName()和ClassLoader.loadClass()**
+
+Class.forName(className)方法，内部实际调用的方法是  Class.forName(className,true,classloader);
+
+第2个boolean参数表示类是否需要初始化，  Class.forName(className)默认是需要初始化。
+
+一旦初始化，就会触发目标对象的 static块代码执行，static参数也也会被再次初始化。
+
+ClassLoader.loadClass(className)方法，内部实际调用的方法是  ClassLoader.loadClass(className,false);
+
+第2个 boolean参数，表示目标对象是否进行链接，false表示不进行链接，由上面介绍可以，
+
+不进行链接意味着不进行包括初始化等一些列步骤，那么静态块和静态对象就不会得到执行
+
+**数据库链接为什么使用Class.forName(className)**
+
+JDBC  Driver源码如下,因此使用Class.forName(classname)才能在反射回去类的时候执行static块。
+
+```Java
+static {
+    try {
+        java.sql.DriverManager.registerDriver(new Driver());
+    } catch (SQLException E) {
+        throw new RuntimeException("Can't register driver!");
+    }
+}
+```
+
 ## 序列化和反序列化
 
 **序列化ID的作用**
