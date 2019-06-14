@@ -321,3 +321,9 @@ objectList = stringList;  //compilation error incompatible types
 ```Java
 List<String> rawList = new ArrayList()
 ```
+
+## 异常
+
+* 如果你不想编写捕获异常的具体代码的话,你可以使用 throws Exception 的形式,把异常再次向上抛出,交给JVM(Java虚拟机)可以捕获.这是一种比较省事的办法
+
+* 如果你想亲编写处理异常的代码的话,可以使用try{ }catch(){ }的形式,进行捕获,一旦程序发生异常,它就会安照你catch{ }块编写的代码去执行
