@@ -1,6 +1,6 @@
 # Java容器
 
-## 1.概览
+## 概览
 
 容器主要包括 Collection 和 Map 两种，Collection 存储着对象的集合，而 Map 存储着键值对（两个对象）的映射表。
 
@@ -34,10 +34,10 @@
 - HashTable：和 HashMap 类似，但它是线程安全的，这意味着同一时刻多个线程可以同时写入 HashTable 并且不会导致数据不一致。它是遗留类，不应该去使用它。现在可以使用 ConcurrentHashMap 来支持线程安全，并且 ConcurrentHashMap 的效率会更高，因为 ConcurrentHashMap 引入了分段锁。
 - LinkedHashMap：使用双向链表来维护元素的顺序，顺序为插入顺序或者最近最少使用（LRU）顺序。
 
-## 2.比较器comparable 和 Comparator的区别
+## 比较器Comparable和Comparator的区别
 
-- comparable接口实际上是出自java.lang包 它有一个 `compareTo(Object obj)`方法用来排序
-- comparator接口实际上是出自 java.util 包它有一个`compare(Object obj1, Object obj2)`方法用来排序
+- Comparable接口实际上是出自java.lang包 它有一个 `compareTo(Object obj)`方法用来排序
+- Comparator接口实际上是出自 java.util包它有一个`compare(Object obj1, Object obj2)`方法用来排序
 
 一般我们需要对一个集合使用自定义排序时，我们就要重写`compareTo()`方法或`compare()`方法，当我们需要对某一个集合实现两种排序方式，比如一个song对象中的歌名和歌手名分别采用一种排序方法的话，我们可以重写`compareTo()`方法和使用自制的Comparator方法或者以两个Comparator来实现歌名排序和歌星名排序，第二种代表我们只能使用两个参数版的 `Collections.sort()`.
 
@@ -166,7 +166,7 @@ Output：
 
 **快速失败（fail-fast）**
 
-在使用迭代器对集合对象进行遍历的时候，如果 A 线程正在对集合进行遍历，此时 B 线程对集合进行修改（增加、删除、修改），或者 A 线程在遍历过程中对集合进行修改，都会导致 A 线程抛出 ConcurrentModificationException 异常。
+在使用迭代器对集合对象进行遍历的时候，如果 A 线程正在对集合进行遍历，此时 B 线程对集合进行修改（**增加、删除、修改**），或者 A 线程在遍历过程中对集合进行修改，都会导致 A 线程抛出 ConcurrentModificationException 异常。
 
 具体效果我们看下代码：
 
