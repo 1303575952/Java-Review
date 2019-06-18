@@ -913,7 +913,7 @@ ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
 
 `ThreadLocalMap` 中使用的 key 为 `ThreadLocal` 的弱引用,而 value 是强引用。所以，如果 `ThreadLocal` 没有被外部强引用的情况下，在垃圾回收的时候会 key 会被清理掉，而 value 不会被清理掉。这样一来，`ThreadLocalMap` 中就会出现key为null的Entry。假如我们不做任何措施的话，value 永远无法被GC 回收，这个时候就可能会产生内存泄露。ThreadLocalMap实现中已经考虑了这种情况，在调用 `set()`、`get()`、`remove()` 方法的时候，会清理掉 key 为 null 的记录。使用完 `ThreadLocal`方法后 最好手动调用`remove()`方法
 
-```
+```Java
       static class Entry extends WeakReference<ThreadLocal<?>> {
             /** The value associated with this ThreadLocal. */
             Object value;
@@ -933,7 +933,7 @@ ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
 
 ## Java 内存模型
 
-Java 内存模型试图屏蔽各种硬件和操作系统的内存访问差异，以实现让 Java 程序在各种平台下都能达到一致的内存访问效果。
+Java内存模型试图屏蔽各种硬件和操作系统的内存访问差异，以实现让Java程序在各种平台下都能达到一致的内存访问效果。
 
 ### 主内存与工作内存
 
@@ -1074,4 +1074,4 @@ CAS 只对单个共享变量有效，当操作涉及跨多个共享变量时 CAS
   仅当写入锁定在调用期间未被另一个线程保持时获取读取锁定。 
   如果另一个线程没有保持写入锁定，则获取读取锁定并立即返回 true 值。即使已将此锁定设置为使用公平排序策略，但是调用 tryLock() 仍将 立即获取读取锁定（如果有可用的），不管其他线程当前是否正在等待该读取锁定。在某些情况下，此“闯入”行为可能很有用，即使它会打破公平性也如此。如果希望遵守此锁定的公平设置，则使用 tryLock(0, TimeUnit.SECONDS) ，它几乎是等效的（它也检测中断）。 如果写入锁定被另一个线程保持，则此方法将立即返回 false 值。 
 
-  **可见最大的区别，就是会不会被休眠等待。。**  
+  **可见最大的区别，就是会不会被休眠等待。**
