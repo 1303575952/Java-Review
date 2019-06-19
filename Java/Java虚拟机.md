@@ -168,7 +168,7 @@ Java 提供了四种强度不同的引用类型。
 
 使用 new 一个新对象的方式来创建强引用。
 
-```
+```Java
 Object obj = new Object();
 ```
 
@@ -178,7 +178,7 @@ Object obj = new Object();
 
 使用 SoftReference 类来创建软引用。
 
-```
+```Java
 Object obj = new Object();
 SoftReference<Object> sf = new SoftReference<Object>(obj);
 obj = null;  // 使对象只被软引用关联
@@ -190,7 +190,7 @@ obj = null;  // 使对象只被软引用关联
 
 使用 WeakReference 类来创建弱引用。
 
-```
+```Java
 Object obj = new Object();
 WeakReference<Object> wf = new WeakReference<Object>(obj);
 obj = null;
@@ -204,7 +204,7 @@ obj = null;
 
 使用 PhantomReference 来创建虚引用。
 
-```
+```Java
 Object obj = new Object();
 PhantomReference<Object> pf = new PhantomReference<Object>(obj, null);
 obj = null;
@@ -227,7 +227,7 @@ obj = null;
 - 标记和清除过程效率都不高；
 - 会产生大量不连续的内存碎片，导致无法给大对象分配内存。
 
-### 2. 标记 - 整理
+#### 2. 标记 - 整理
 
 ![标记-整理](pic/标记-整理.png)
 
@@ -241,7 +241,7 @@ obj = null;
 
 - 需要移动大量对象，处理效率比较低。
 
-### 3. 复制
+#### 3. 复制
 
 ![复制](pic/复制.png)
 
@@ -251,7 +251,7 @@ obj = null;
 
 现在的商业虚拟机都采用这种收集算法回收新生代，但是并不是划分为大小相等的两块，而是一块较大的 Eden 空间和两块较小的 Survivor 空间，每次使用 Eden 和其中一块 Survivor。在回收时，将 Eden 和 Survivor 中还存活着的对象全部复制到另一块 Survivor 上，最后清理 Eden 和使用过的那一块 Survivor。
 
-HotSpot 虚拟机的 Eden 和 Survivor 大小比例默认为 8:1，保证了内存的利用率达到 90%。如果每次回收有多于 10% 的对象存活，那么一块 Survivor 就不够用了，此时需要依赖于老年代进行空间分配担保，也就是借用老年代的空间存储放不下的对象。
+HotSpot 虚拟机的 Eden 和 Survivor 大小比例默认为 8:1:1，保证了内存的利用率达到 90%。如果每次回收有多于 10% 的对象存活，那么一块 Survivor 就不够用了，此时需要依赖于老年代进行空间分配担保，也就是借用老年代的空间存储放不下的对象。
 
 ### 4. 分代收集
 
@@ -422,7 +422,7 @@ G1 把堆划分成多个大小相等的独立区域（Region），新生代和�
 
 #### 3. 空间分配担保失败
 
-使用复制算法的 Minor GC 需要老年代的内存空间作担保，如果担保失败会执行一次 Full GC。具体内容请参考上面的第 5 小节。
+使用复制算法的 Minor GC 需要老年代的内存空间作担保，如果担保失败会执行一次 Full GC。
 
 #### 4. JDK 1.7 及以前的永久代空间不足
 
@@ -487,13 +487,13 @@ G1 把堆划分成多个大小相等的独立区域（Region），新生代和�
 
 初始值一般为 0 值，例如下面的类变量 value 被初始化为 0 而不是 123。
 
-```
+```Java
 public static int value = 123;
 ```
 
 如果类变量是常量，那么它将初始化为表达式所定义的值而不是 0。例如下面的常量 value 被初始化为 123 而不是 0。
 
-```
+```Java
 public static final int value = 123;
 ```
 
@@ -509,7 +509,7 @@ public static final int value = 123;
 
 <clinit>() 是由编译器自动收集类中所有类变量的赋值动作和静态语句块中的语句合并产生的，编译器收集的顺序由语句在源文件中出现的顺序决定。特别注意的是，静态语句块只能访问到定义在它之前的类变量，定义在它之后的类变量只能赋值，不能访问。例如以下代码：
 
-```
+```Java
 public class Test {
     static {
         i = 0;                // 给变量赋值可以正常编译通过
@@ -521,7 +521,7 @@ public class Test {
 
 由于父类的 <clinit>() 方法先执行，也就意味着父类中定义的静态语句块的执行要优先于子类。例如以下代码：
 
-```
+```Java
 static class Parent {
     public static int A = 1;
     static {
@@ -583,7 +583,7 @@ public static void main(String[] args) {
 
 以下是抽象类 java.lang.ClassLoader 的代码片段，其中的 loadClass() 方法运行过程如下：先检查类是否已经加载过，如果没有则让父类加载器去加载。当父类加载器加载失败时抛出 ClassNotFoundException，此时尝试自己去加载。
 
-```
+```Java
 public abstract class ClassLoader {
     // The parent class loader for delegation
     private final ClassLoader parent;
@@ -706,7 +706,16 @@ public class FileSystemClassLoader extends ClassLoader {
 
 选择以上两种方式中的哪一种，取决于 Java 堆内存是否规整。而 Java 堆内存是否规整，取决于 GC 收集器的算法是"标记-清除"，还是"标记-整理"（也称作"标记-压缩"），值得注意的是，复制算法内存也是规整的
 
-[![img](https://camo.githubusercontent.com/65fc0c035f1f70081f4dcdd113c3b2c7aa931a2a/68747470733a2f2f757365722d676f6c642d63646e2e786974752e696f2f323031382f382f32322f313635363165353961343061326333643f773d3134323626683d33333326663d706e6726733d3236333436)](https://camo.githubusercontent.com/65fc0c035f1f70081f4dcdd113c3b2c7aa931a2a/68747470733a2f2f757365722d676f6c642d63646e2e786974752e696f2f323031382f382f32322f313635363165353961343061326333643f773d3134323626683d33333326663d706e6726733d3236333436)
+![内存分配的两种方式](pic/内存分配的两种方式.png)
+
+* 指针碰撞
+  * 适用场合：堆内存规整（即没有垃圾碎片）的情况下
+  * 原理：用过的内存全部整合到一边，没有用过的内存放到一边，中间有一个分界值指针，只需要想着没用过的内存方向将该指针移动对象内存大小位置即可
+  * GC收集器：Serial、ParNew
+* 空闲列表
+  * 适用场合：堆内存不规整的情况下
+  * 原理：虚拟机会维护一个列表，该列表会记录哪些存储块是可用的，在分配的时候，找一块足够大的内存块划分给对象实例，最后更新列表记录
+  * GC收集器：CMS
 
 **内存分配并发问题（补充内容，需要掌握）**
 
