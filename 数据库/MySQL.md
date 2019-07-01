@@ -238,7 +238,7 @@ T1 读取某个范围的数据，T2 在这个范围内插入新的数据，T1 �
 
 创建一张存储引擎为testmvcc的表，sql为:
 
-```s&#39;q&#39;l
+```sql
 CREATE TABLE testmvcc (
  id int(11) DEFAULT NULL,
  name varchar(11) DEFAULT NULL
@@ -315,7 +315,7 @@ MVCC的实现，通过保存数据在某个时间点的快照来实现的。这�
 
 使用 MVCC 读取的是快照中的数据，这样可以减少加锁所带来的开销。
 
-```
+```sql
 select * from table ...;
 ```
 
@@ -323,7 +323,7 @@ select * from table ...;
 
 读取的是最新的数据，需要加锁。以下第一个语句需要加 S 锁，其它都需要加 X 锁。
 
-```
+```sql
 select * from table where ? lock in share mode;
 select * from table where ? for update;
 insert;
@@ -347,7 +347,7 @@ MVCC 不能解决幻影读问题，Next-Key Locks 就是为了解决这个问题
 
 锁定索引之间的间隙，但是不包含索引本身。例如当一个事务执行以下语句，其它事务就不能在 t.c 中插入 15。
 
-```
+```sql
 SELECT c FROM t WHERE c BETWEEN 10 and 20 FOR UPDATE;
 ```
 
@@ -449,7 +449,7 @@ SELECT c FROM t WHERE c BETWEEN 10 and 20 FOR UPDATE;
 
 例如下面的查询不能使用 actor_id 列的索引：
 
-```
+```sql
 SELECT actor_id FROM sakila.actor WHERE actor_id + 1 = 5;
 ```
 
@@ -457,7 +457,7 @@ SELECT actor_id FROM sakila.actor WHERE actor_id + 1 = 5;
 
 在需要使用多个列作为条件进行查询时，使用多列索引比使用多个单列索引性能更好。例如下面的语句中，最好把 actor_id 和 film_id 设置为多列索引。
 
-```
+```sql
 SELECT film_id, actor_ id FROM sakila.film_actor
 WHERE actor_id = 1 AND film_id = 1;
 ```
@@ -470,7 +470,7 @@ WHERE actor_id = 1 AND film_id = 1;
 
 例如下面显示的结果中 customer_id 的选择性比 staff_id 更高，因此最好把 customer_id 列放在多列索引的前面。
 
-```
+```sql
 SELECT COUNT(DISTINCT staff_id)/COUNT(*) AS staff_id_selectivity,
 COUNT(DISTINCT customer_id)/COUNT(*) AS customer_id_selectivity,
 COUNT(*)
@@ -522,7 +522,7 @@ customer_id_selectivity: 0.0373
 
 隐式转换会导致索引失效如:
 
-```
+```sql
 select name,phone from customer where id = '111';
 ```
 
@@ -554,17 +554,17 @@ select name,phone from customer where id = '111';
 
 如：
 
-```
+```sql
 insert into values ('a','b','c');
 ```
 
 应使用：
 
-```
+```sql
 insert into t(c1,c2,c3) values ('a','b','c');
 ```
 
-### 8. 避免使用子查询，可以把子查询优化为 join 操作
+### 8. 避免使用子查询，可以把子查询优化为 JOIN操作
 
 通常子查询在 in 子句中，且子查询中为简单 SQL(不包含 union、group by、order by、limit 从句) 时,才可以把子查询转化为关联查询进行优化。
 
@@ -879,7 +879,7 @@ Show Profile是MySQL提供可以用来分析当前会话中语句执行的资源
 
 说了以上这么多，那么究竟一条 sql 语句是如何执行的呢？其实我们的 sql 可以分为两种，一种是查询，一种是更新（增加，更新，删除）。我们先分析下查询语句，语句如下：
 
-```
+```sql
 select * from tb_student  A where A.age='18' and A.name=' 张三 ';
 ```
 
@@ -943,7 +943,7 @@ update tb_student A set A.age='19' where A.name=' 张三 ';
 
 内连接又称等值连接，使用 INNER JOIN 关键字。
 
-```
+```sql
 SELECT A.value, B.value
 FROM tablea AS A INNER JOIN tableb AS B
 ON A.key = B.key;
@@ -951,7 +951,7 @@ ON A.key = B.key;
 
 可以不明确使用 INNER JOIN，而使用普通查询并在 WHERE 中将两个表中要连接的列用等值方法连接起来。
 
-```
+```sql
 SELECT A.value, B.value
 FROM tablea AS A, tableb AS B
 WHERE A.key = B.key;
@@ -965,7 +965,7 @@ WHERE A.key = B.key;
 
 子查询版本
 
-```
+```sql
 SELECT name
 FROM employee
 WHERE department = (
@@ -976,7 +976,7 @@ WHERE department = (
 
 自连接版本
 
-```
+```sql
 SELECT e1.name
 FROM employee AS e1 INNER JOIN employee AS e2
 ON e1.department = e2.department
@@ -989,7 +989,7 @@ ON e1.department = e2.department
 
 内连接和自然连接的区别：内连接提供连接的列，而自然连接自动连接所有同名列。
 
-```
+```sql
 SELECT A.value, B.value
 FROM tablea AS A NATURAL JOIN tableb AS B;
 ```
@@ -1000,7 +1000,7 @@ FROM tablea AS A NATURAL JOIN tableb AS B;
 
 检索所有顾客的订单信息，包括还没有订单信息的顾客。
 
-```
+```sql
 SELECT Customers.cust_id, Orders.order_num
 FROM Customers LEFT OUTER JOIN Orders
 ON Customers.cust_id = Orders.cust_id;
