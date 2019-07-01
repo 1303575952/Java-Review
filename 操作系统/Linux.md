@@ -81,9 +81,9 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *
 select/poll/epoll 都是 I/O 多路复用的具体实现，select 出现的最早，之后是 poll，再是 epoll。
 
 #### select
-
+```c
 int select(int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
-
+```
 有三种类型的描述符类型：readset、writeset、exceptset，分别对应读、写、异常条件的描述符集合。fd_set 使用数组实现，数组大小使用 FD_SETSIZE 定义。
 
 timeout 为超时参数，调用 select 会一直阻塞直到有描述符的事件到达或者等待的时间超过 timeout。
@@ -91,9 +91,9 @@ timeout 为超时参数，调用 select 会一直阻塞直到有描述符的事�
 成功调用返回结果大于 0，出错返回结果为 -1，超时返回结果为 0。
 
 #### poll
-
+```c
 int poll(struct pollfd *fds, unsigned int nfds, int timeout);
-
+```
 pollfd 使用链表实现。
 
 #### 比较
@@ -119,9 +119,11 @@ select 和 poll 速度都比较慢。
 几乎所有的系统都支持 select，但是只有比较新的系统支持 poll。
 
 #### epoll
-
-int epoll_create(int size); int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)； int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
-
+```c
+int epoll_create(int size);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
+```
 epoll_ctl() 用于向内核注册新的描述符或者是改变某个文件描述符的状态。已注册的描述符在内核中会被维护在一棵红黑树上，通过回调函数内核会将 I/O 准备好的描述符加入到一个链表中管理，进程调用 epoll_wait() 便可以得到事件完成的描述符。
 
 从上面的描述可以看出，epoll 只需要将描述符从进程缓冲区向内核缓冲区拷贝一次，并且进程不需要通过轮询来获得事件完成的描述符。
@@ -177,7 +179,7 @@ poll 没有最大描述符数量的限制，如果平台支持并且对实时性
 Linux的设计哲学之一就是：对不同的操作赋予不同的执行等级，就是所谓特权的概念，即与系统相关的一些特别关键的操作必须由最高特权的程序来完成。
 Intel的X86架构的CPU提供了0到3四个特权级，数字越小，特权越高，Linux操作系统中主要采用了0和3两个特权级，分别对应的就是**内核态(Kernel Mode)**与**用户态(User Mode)**。
 
-- 内核态：CPU可以访问内存所有数据,包括外围设备（硬盘、网卡），CPU也可以将自己从一个程序切换到另一个程序；
+- 内核态：CPU可以访问内存所有数据，包括外围设备（硬盘、网卡），CPU也可以将自己从一个程序切换到另一个程序；
 - 用户态：只能受限的访问内存，且不允许访问外围设备，占用CPU的能力被剥夺，CPU资源可以被其他程序获取；
 
 Linux中任何一个用户进程被创建时都包含2个栈：内核栈，用户栈，并且是进程私有的，从用户态开始运行。内核态和用户态分别对应内核空间与用户空间，内核空间中存放的是内核代码和数据，而进程的用户空间中存放的是用户程序的代码和数据。不管是内核空间还是用户空间，它们都处于虚拟空间中。
