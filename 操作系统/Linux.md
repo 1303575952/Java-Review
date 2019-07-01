@@ -81,9 +81,9 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *
 select/poll/epoll 都是 I/O 多路复用的具体实现，select 出现的最早，之后是 poll，再是 epoll。
 
 #### select
-
+```
 int select(int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
-
+```
 有三种类型的描述符类型：readset、writeset、exceptset，分别对应读、写、异常条件的描述符集合。fd_set 使用数组实现，数组大小使用 FD_SETSIZE 定义。
 
 timeout 为超时参数，调用 select 会一直阻塞直到有描述符的事件到达或者等待的时间超过 timeout。
@@ -91,9 +91,9 @@ timeout 为超时参数，调用 select 会一直阻塞直到有描述符的事�
 成功调用返回结果大于 0，出错返回结果为 -1，超时返回结果为 0。
 
 #### poll
-
+```
 int poll(struct pollfd *fds, unsigned int nfds, int timeout);
-
+```
 pollfd 使用链表实现。
 
 #### 比较
@@ -119,9 +119,11 @@ select 和 poll 速度都比较慢。
 几乎所有的系统都支持 select，但是只有比较新的系统支持 poll。
 
 #### epoll
-
-int epoll_create(int size); int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)； int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
-
+```
+int epoll_create(int size);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
+```
 epoll_ctl() 用于向内核注册新的描述符或者是改变某个文件描述符的状态。已注册的描述符在内核中会被维护在一棵红黑树上，通过回调函数内核会将 I/O 准备好的描述符加入到一个链表中管理，进程调用 epoll_wait() 便可以得到事件完成的描述符。
 
 从上面的描述可以看出，epoll 只需要将描述符从进程缓冲区向内核缓冲区拷贝一次，并且进程不需要通过轮询来获得事件完成的描述符。
