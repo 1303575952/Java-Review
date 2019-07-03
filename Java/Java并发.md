@@ -114,7 +114,7 @@ public ThreadPoolExecutor(int paramInt1, int paramInt2, long paramLong, TimeUnit
 
 **corePoolSize**：线程池的核心池大小，在创建线程池之后，线程池默认没有任何线程。
 
-当有任务过来的时候才会去创建线程执行任务。换个说法，线程池创建之后，线程池中的线程数为0，当任务过来就会创建一个线程去执行，直到线程数达到corePoolSize 之后，就会被到达的任务放在队列中。（注意是到达的任务）。换句更精炼的话：corePoolSize 表示线程池中允许同时运行的最大线程数。
+当有任务过来的时候才会去创建线程执行任务。换个说法，线程池创建之后，线程池中的线程数为0，当任务过来就会创建一个线程去执行，直到线程数达到corePoolSize 之后，就会被到达的任务放在队列中。（注意是到达的任务）。换句更精炼的话：corePoolSize 表示线程池中允许同时运行的最大线程数。即便是线程池里没有任何任务，也会有corePoolSize个线程在候着等任务。
 
 如果执行了线程池的prestartAllCoreThreads()方法，线程池会提前创建并启动所有核心线程。
 
