@@ -72,7 +72,7 @@ public static void main(String[] args) {
 
 ## Daemon
 
-守护线程是程序运行时在后台提供服务的线程，不属于程序中不可或缺的部分。
+守护线程是程序运行时在后台提供服务的线程（如垃圾回收线程），不属于程序中不可或缺的部分。
 
 当所有非守护线程结束时，程序也就终止，同时会杀死所有守护线程。
 
@@ -164,7 +164,7 @@ DiscardPolicy：丢弃任务，不做任何处理。
 
 ThreadPoolExecutor提供了两个方法，用于线程池的关闭，分别是shutdown()和shutdownNow()，其中：
 
-shutdown()：不会立即终止线程池，而是要等所有任务缓存队列中的任务都执行完后才终止，但再也不会接受新的任务
+shutdown()：不会立即终止线程池，而是要等**所有任务缓存队列中的任务都执行完**后才终止，但再**也不会接受新的任务**
 
 shutdownNow()：立即终止线程池，并尝试打断正在执行的任务，并且清空任务缓存队列，返回尚未执行的任务
 
@@ -818,7 +818,7 @@ J.U.C 包提供了一个带有标记的原子引用类 AtomicStampedReference �
 
 JDK1.6 对锁的实现引入了大量的优化，如偏向锁、轻量级锁、自旋锁、适应性自旋锁、锁消除、锁粗化等技术来减少锁操作的开销。
 
-锁主要存在四中状态，依次是：无锁状态、偏向锁状态、轻量级锁状态、重量级锁状态，他们会随着竞争的激烈而逐渐升级。注意锁可以升级不可降级，这种策略是为了提高获得锁和释放锁的效率。
+锁主要存在四种状态，依次是：无锁状态、偏向锁状态、轻量级锁状态、重量级锁状态，他们会随着竞争的激烈而逐渐升级。注意锁可以升级不可降级，这种策略是为了提高获得锁和释放锁的效率。
 
 **①偏向锁**
 
@@ -860,13 +860,53 @@ JDK1.6 对锁的实现引入了大量的优化，如偏向锁、轻量级锁、�
 
 大部分情况下，上面的原则都是没有问题的，但是如果一系列的连续操作都对同一个对象反复加锁和解锁，那么会带来很多不必要的性能消耗。
 
+## synchronized底层
+
+**synchronized 关键字底层原理属于 JVM 层面。**
+
+**① synchronized 同步语句块的情况**
+
+```Java
+public class SynchronizedDemo {
+	public void method() {
+		synchronized (this) {
+			System.out.println("synchronized 代码块");
+		}
+	}
+}
+```
+
+通过 JDK 自带的 javap 命令查看 SynchronizedDemo 类的相关字节码信息：首先切换到类的对应目录执行 `javac SynchronizedDemo.java` 命令生成编译后的 .class 文件，然后执行`javap -c -s -v -l SynchronizedDemo.class`。
+
+![synchronized同步语句块](C:/Users/imlif/ProjectFiles/Java-Review/Java/pic/synchronized%E5%90%8C%E6%AD%A5%E8%AF%AD%E5%8F%A5%E5%9D%97.png)
+
+从上面我们可以看出：
+
+**synchronized 同步语句块的实现使用的是 monitorenter 和 monitorexit 指令，其中 monitorenter 指令指向同步代码块的开始位置，monitorexit 指令则指明同步代码块的结束位置。** 当执行 monitorenter 指令时，线程试图获取锁也就是获取 monitor(monitor对象存在于每个Java对象的对象头中，synchronized 锁便是通过这种方式获取锁的，也是为什么Java中任意对象可以作为锁的原因) 的持有权.当计数器为0则可以成功获取，获取后将锁计数器设为1也就是加1。相应的在执行 monitorexit 指令后，将锁计数器设为0，表明锁被释放。如果获取对象锁失败，那当前线程就要阻塞等待，直到锁被另外一个线程释放为止。
+
+**② synchronized 修饰方法的的情况**
+
+```Java
+public class SynchronizedDemo2 {
+	public synchronized void method() {
+		System.out.println("synchronized 方法");
+	}
+}
+```
+
+![synchronized同步方法](C:/Users/imlif/ProjectFiles/Java-Review/Java/pic/synchronized%E5%90%8C%E6%AD%A5%E6%96%B9%E6%B3%95.png)
+
+synchronized 修饰的方法并没有 monitorenter 指令和 monitorexit 指令，取得代之的确实是 ACC_SYNCHRONIZED 标识，该标识指明了该方法是一个同步方法，JVM 通过该 ACC_SYNCHRONIZED 访问标志来辨别一个方法是否声明为同步方法，从而执行相应的同步调用。
+
+在 Java 早期版本中，synchronized 属于重量级锁，效率低下，因为监视器锁（monitor）是依赖于底层的操作系统的 Mutex Lock 来实现的，Java 的线程是映射到操作系统的原生线程之上的。如果要挂起或者唤醒一个线程，都需要操作系统帮忙完成，而操作系统实现线程之间的切换时需要从用户态转换到内核态，这个状态之间的转换需要相对比较长的时间，时间成本相对较高，这也是为什么早期的 synchronized 效率低的原因。庆幸的是在 Java 6 之后 Java 官方对从 JVM 层面对synchronized 较大优化，所以现在的 synchronized 锁效率也优化得很不错了。JDK1.6对锁的实现引入了大量的优化，如自旋锁、适应性自旋锁、锁消除、锁粗化、偏向锁、轻量级锁等技术来减少锁操作的开销。
+
 ## ThreadLocal
 
 ### 1. ThreadLocal简介
 
-通常情况下，我们创建的变量是可以被任何一个线程访问并修改的。**如果想实现每一个线程都有自己的专属本地变量该如何解决呢？** JDK中提供的`ThreadLocal`类正是为了解决这样的问题。 **ThreadLocal类主要解决的就是让每个线程绑定自己的值，可以将ThreadLocal类形象的比喻成存放数据的盒子，盒子中可以存储每个线程的私有数据。**
+通常情况下，我们创建的变量是可以被任何一个线程访问并修改的。**如果想实现每一个线程都有自己的专属本地变量该如何解决呢？** JDK中提供的ThreadLocal类正是为了解决这样的问题。 **ThreadLocal类主要解决的就是让每个线程绑定自己的值，可以将ThreadLocal类形象的比喻成存放数据的盒子，盒子中可以存储每个线程的私有数据。**
 
-**如果你创建了一个ThreadLocal变量，那么访问这个变量的每个线程都会有这个变量的本地副本，这也是ThreadLocal变量名的由来。他们可以使用 get（） 和 set（） 方法来获取默认值或将其值更改为当前线程所存的副本的值，从而避免了线程安全问题。**
+**如果你创建了一个ThreadLocal变量，那么访问这个变量的每个线程都会有这个变量的本地副本，这也是ThreadLocal变量名的由来。他们可以使用 get() 和 set() 方法来获取默认值或将其值更改为当前线程所存的副本的值，从而避免了线程安全问题。**
 
 再举个简单的例子：
 
@@ -943,8 +983,7 @@ Thread Name= 9 formatter = yy-M-d ah:mm
 ```Java
 private static final ThreadLocal<SimpleDateFormat> formatter = new ThreadLocal<SimpleDateFormat>(){
         @Override
-        protected SimpleDateFormat initialValue()
-        {
+        protected SimpleDateFormat initialValue() {
             return new SimpleDateFormat("yyyyMMdd HHmm");
         }
     };
@@ -956,13 +995,13 @@ private static final ThreadLocal<SimpleDateFormat> formatter = new ThreadLocal<S
 
 ```Java
 public class Thread implements Runnable {
- ......
-//与此线程有关的ThreadLocal值。由ThreadLocal类维护
-ThreadLocal.ThreadLocalMap threadLocals = null;
+	......
+	//与此线程有关的ThreadLocal值。由ThreadLocal类维护
+	ThreadLocal.ThreadLocalMap threadLocals = null;
 
-//与此线程有关的InheritableThreadLocal值。由InheritableThreadLocal类维护
-ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
- ......
+	//与此线程有关的InheritableThreadLocal值。由InheritableThreadLocal类维护
+	ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
+	......
 }
 ```
 
@@ -997,15 +1036,15 @@ ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
 `ThreadLocalMap` 中使用的 key 为 `ThreadLocal` 的弱引用,而 value 是强引用。所以，如果 `ThreadLocal` 没有被外部强引用的情况下，在垃圾回收的时候会 key 会被清理掉，而 value 不会被清理掉。这样一来，`ThreadLocalMap` 中就会出现key为null的Entry。假如我们不做任何措施的话，value 永远无法被GC 回收，这个时候就可能会产生内存泄露。ThreadLocalMap实现中已经考虑了这种情况，在调用 `set()`、`get()`、`remove()` 方法的时候，会清理掉 key 为 null 的记录。使用完 `ThreadLocal`方法后 最好手动调用`remove()`方法
 
 ```Java
-      static class Entry extends WeakReference<ThreadLocal<?>> {
-            /** The value associated with this ThreadLocal. */
-            Object value;
+static class Entry extends WeakReference<ThreadLocal<?>> {
+    /** The value associated with this ThreadLocal. */
+    Object value;
 
-            Entry(ThreadLocal<?> k, Object v) {
-                super(k);
-                value = v;
-            }
-        }
+    Entry(ThreadLocal<?> k, Object v) {
+        super(k);
+        value = v;
+    }
+}
 ```
 
 **弱引用介绍：**
@@ -1046,46 +1085,6 @@ Java 内存模型定义了 8 个操作来完成主内存和工作内存的交互
 - write：在 store 之后执行，把 store 得到的值放入主内存的变量中
 - lock：作用于主内存的变量
 - unlock
-
-## synchronized底层
-
-**synchronized 关键字底层原理属于 JVM 层面。**
-
-**① synchronized 同步语句块的情况**
-
-```Java
-public class SynchronizedDemo {
-	public void method() {
-		synchronized (this) {
-			System.out.println("synchronized 代码块");
-		}
-	}
-}
-```
-
-通过 JDK 自带的 javap 命令查看 SynchronizedDemo 类的相关字节码信息：首先切换到类的对应目录执行 `javac SynchronizedDemo.java` 命令生成编译后的 .class 文件，然后执行`javap -c -s -v -l SynchronizedDemo.class`。
-
-![synchronized同步语句块](pic/synchronized同步语句块.png)
-
-从上面我们可以看出：
-
-**synchronized 同步语句块的实现使用的是 monitorenter 和 monitorexit 指令，其中 monitorenter 指令指向同步代码块的开始位置，monitorexit 指令则指明同步代码块的结束位置。** 当执行 monitorenter 指令时，线程试图获取锁也就是获取 monitor(monitor对象存在于每个Java对象的对象头中，synchronized 锁便是通过这种方式获取锁的，也是为什么Java中任意对象可以作为锁的原因) 的持有权.当计数器为0则可以成功获取，获取后将锁计数器设为1也就是加1。相应的在执行 monitorexit 指令后，将锁计数器设为0，表明锁被释放。如果获取对象锁失败，那当前线程就要阻塞等待，直到锁被另外一个线程释放为止。
-
-**② synchronized 修饰方法的的情况**
-
-```Java
-public class SynchronizedDemo2 {
-	public synchronized void method() {
-		System.out.println("synchronized 方法");
-	}
-}
-```
-
-![synchronized同步方法](pic/synchronized同步方法.png)
-
-synchronized 修饰的方法并没有 monitorenter 指令和 monitorexit 指令，取得代之的确实是 ACC_SYNCHRONIZED 标识，该标识指明了该方法是一个同步方法，JVM 通过该 ACC_SYNCHRONIZED 访问标志来辨别一个方法是否声明为同步方法，从而执行相应的同步调用。
-
-在 Java 早期版本中，synchronized 属于重量级锁，效率低下，因为监视器锁（monitor）是依赖于底层的操作系统的 Mutex Lock 来实现的，Java 的线程是映射到操作系统的原生线程之上的。如果要挂起或者唤醒一个线程，都需要操作系统帮忙完成，而操作系统实现线程之间的切换时需要从用户态转换到内核态，这个状态之间的转换需要相对比较长的时间，时间成本相对较高，这也是为什么早期的 synchronized 效率低的原因。庆幸的是在 Java 6 之后 Java 官方对从 JVM 层面对synchronized 较大优化，所以现在的 synchronized 锁效率也优化得很不错了。JDK1.6对锁的实现引入了大量的优化，如自旋锁、适应性自旋锁、锁消除、锁粗化、偏向锁、轻量级锁等技术来减少锁操作的开销。
 
 ## 为什么wait()一定要放在循环中
 
