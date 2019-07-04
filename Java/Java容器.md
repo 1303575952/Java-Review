@@ -160,7 +160,7 @@ Output：
 30-张三
 ```
 
-## 3.快速失败和安全失败
+## 快速失败和安全失败
 
 我们都接触 HashMap、ArrayList 这些集合类，这些在 java.util 包的集合类就都是快速失败的；而 java.util.concurrent 包下的类都是安全失败，比如：ConcurrentHashMap。
 
@@ -223,7 +223,7 @@ System.out.println("程序结束");
 
 最后说明一下，**快速失败和安全失败是对迭代器而言的**。并发环境下建议使用 java.util.concurrent 包下的容器类，除非没有修改操作。
 
-## 4.HashMap
+## HashMap
 
 ### 摘要
 
@@ -569,7 +569,7 @@ HashMap中，如果key经过hash算法得出的数组索引位置全部不相同
 
 7、CSDN博客频道，为什么一般hashtable的桶数会取一个素数，2013。
 
-## 4.LinkedHashMap
+## LinkedHashMap
 
 以下是使用 LinkedHashMap 实现的一个 LRU 缓存：
 
@@ -603,7 +603,7 @@ public static void main(String[] args) {
 [3, 1, 4]
 ```
 
-## 5.ConcurrentHashMap
+## ConcurrentHashMap
 
 **存储结构**
 
@@ -728,3 +728,4 @@ JDK 1.7 使用分段锁机制来实现并发更新操作，核心类为 Segment�
 JDK 1.8 使用了 CAS 操作来支持更高的并发度，在 CAS 操作失败时使用内置锁 synchronized。
 
 并且 JDK 1.8 的实现也在链表过长时会转换为红黑树。
+
