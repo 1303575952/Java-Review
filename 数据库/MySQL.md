@@ -672,6 +672,35 @@ where create_time >= '20190101' and create_time < '20190102'
 - MySQL 中，一个 SQL 只能使用一个 CPU 进行计算
 - SQL 拆分后可以通过并行执行来提高处理效率
 
+## 分页优化
+
+```Java
+select * from table_name limit 10000,10
+```
+
+这句 SQL 的执行逻辑是：
+
+1. 从数据表中读取第N条数据添加到数据集中
+2. 重复第一步直到 N = 10000 + 10
+3. 根据 offset 抛弃前面 10000 条数
+4. 返回剩余的 10 条数据
+
+数据库的数据存储是随机的，使用 B+Tree， Hash 等方式组织索引。所以当你让数据库读取第 10001 条数据的时候，数据库就只能一条一条的去查去数
+
+最简单的方法是利用自增索引（假设为id）：
+
+```Java
+select * from table_name where (id >= 10000) limit 10
+```
+
+但思路是有局限性的，首先必须要有自增索引列，而且数据在逻辑上必须是连续的，其次，你还必须知道特征值。如此苛刻的要求，在实际应用中是不可能满足的
+
+好的方式是利用子查询把原来的基于user的搜索转化为基于主键（id）的搜索，主查询因为已经获得了准确的索引值，所以查询过程也相对较快：
+
+```Java
+select * from table_name inner join ( select id from table_name where (user = xxx) limit 10000,10) b using (id)
+```
+
 ## 存储引擎
 
 ### InnoDB
@@ -902,6 +931,11 @@ Show Profile是MySQL提供可以用来分析当前会话中语句执行的资源
 #### 四、SQL数据库服务器参数调优
 
 当order by 和 group by无法使用索引时，增大max_length_for_sort_data参数设置和增大sort_buffer_size参数的设置
+
+## 悲观锁和乐观锁
+
+悲观锁：select for update
+乐观锁：先查询一次数据，然后使用查询出来的数据+1进行更新数据，如果失败则循环
 
 ## 优化数据访问
 
