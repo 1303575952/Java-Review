@@ -14,7 +14,7 @@
 
 **缺点：** 性能比面向过程低
 
-## Java 面向对象编程三大特性: 封装 继承 多态
+## Java面向对象编程三大特性: 封装 继承 多态
 
 ### 封装
 
@@ -59,7 +59,7 @@
 
 下面示例中，s1 和 s2 采用 new String() 的方式新建了两个不同字符串，而 s3 和 s4 是通过 s1.intern() 方法取得一个字符串引用。intern() 首先把 s1 引用的字符串放到 String Pool 中，然后返回这个字符串引用。因此 s3 和 s4 引用的是同一个字符串。
 
-```
+```Java
 String s1 = new String("aaa");
 String s2 = new String("aaa");
 System.out.println(s1 == s2);           // false
@@ -70,7 +70,7 @@ System.out.println(s3 == s4);           // true
 
 如果是采用 "bbb" 这种字面量的形式创建字符串，会自动地将字符串放入 String Pool 中。
 
-```
+```Java
 String s5 = "bbb";
 String s6 = "bbb";
 System.out.println(s5 == s6);  // true
@@ -90,7 +90,7 @@ System.out.println(s5 == s6);  // true
 
 创建一个测试类，其 main 方法中使用这种方式来创建字符串对象。
 
-```
+```Java
 public class NewStringTest {
     public static void main(String[] args) {
         String s = new String("abc");
@@ -128,7 +128,7 @@ Constant pool:
 
 以下是 String 构造函数的源码，可以看到，在将一个字符串对象作为另一个字符串对象的构造函数参数时，并不会完全复制 value 数组内容，而是都会指向同一个 value 数组。
 
-```
+```Java
 public String(String original) {
     this.value = original.value;
     this.hash = original.hash;
@@ -370,9 +370,7 @@ Class.forName(className)方法，内部实际调用的方法是  Class.forName(c
 
 ClassLoader.loadClass(className)方法，内部实际调用的方法是  ClassLoader.loadClass(className,false);
 
-第2个 boolean参数，表示目标对象是否进行链接，false表示不进行链接，由上面介绍可以，
-
-不进行链接意味着不进行包括初始化等一些列步骤，那么静态块和静态对象就不会得到执行
+第2个 boolean参数，表示目标对象是否进行链接，false表示不进行链接，由上面介绍可以知道不进行链接意味着不进行包括初始化等一些列步骤，那么静态块和静态对象就不会得到执行
 
 **数据库链接为什么使用Class.forName(className)**
 
@@ -454,6 +452,6 @@ List<String> rawList = new ArrayList()
 
 ## 异常
 
-* 如果你不想编写捕获异常的具体代码的话,你可以使用 throws Exception 的形式,把异常再次向上抛出,交给JVM(Java虚拟机)可以捕获.这是一种比较省事的办法
+* 如果你不想编写捕获异常的具体代码的话，你可以使用 throws Exception 的形式,把异常再次向上抛出，交给JVM(Java虚拟机)可以捕获，这是一种比较省事的办法
 
-* 如果你想亲编写处理异常的代码的话,可以使用try{ }catch(){ }的形式,进行捕获,一旦程序发生异常,它就会安照你catch{ }块编写的代码去执行
+* 如果你想亲编写处理异常的代码的话，可以使用try{ }catch(){ }的形式,进行捕获，一旦程序发生异常，它就会安照你catch{ }块编写的代码去执行
