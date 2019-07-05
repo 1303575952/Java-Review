@@ -57,7 +57,7 @@ java -Xss512M HackTheJava
 
 Java 虚拟机所管理的内存中最大的一块，Java 堆是所有线程共享的一块内存区域，在虚拟机启动时创建。**此内存区域的唯一目的就是存放对象实例，几乎所有的对象实例以及数组都在这里分配内存。**
 
-Java 堆是垃圾收集器管理的主要区域，因此也被称作**GC 堆（Garbage Collected Heap）**.从垃圾回收的角度，由于现在收集器基本都采用分代垃圾收集算法，所以 Java 堆还可以细分为：新生代和老年代：再细致一点有：Eden 空间、From Survivor、To Survivor 空间等。**进一步划分的目的是更好地回收内存，或者更快地分配内存。**
+Java 堆是垃圾收集器管理的主要区域，因此也被称作**GC 堆（Garbage Collected Heap）**。从垃圾回收的角度，由于现在收集器基本都采用分代垃圾收集算法，所以 Java 堆还可以细分为：新生代和老年代（再细致一点有：Eden 空间、From Survivor、To Survivor 空间等）。**进一步划分的目的是更好地回收内存，或者更快地分配内存。**
 
 eden 区、s0 区、s1 区都属于新生代，tentired 区属于老年代。大部分情况，对象都会首先在 Eden 区域分配，在一次新生代垃圾回收后，如果对象还存活，则会进入 s0 或者 s1，并且对象的年龄还会加 1(Eden 区->Survivor 区后对象的初始年龄变为 1)，当它的年龄增加到一定程度（默认为 15 岁），就会被晋升到老年代中。对象晋升到老年代的年龄阈值，可以通过参数 `-XX:MaxTenuringThreshold` 来设置。
 
@@ -770,7 +770,7 @@ Clojure（Lisp 语言的一种方言）、Groovy、Scala 等语言都是运行�
 
 `jps`：显示虚拟机执行主类名称以及这些进程的本地虚拟机唯一 ID（Local Virtual Machine Identifier,LVMID）。`jps -q` ：只输出进程的本地虚拟机唯一 ID。
 
-```
+```shell
 C:\Users\SnailClimb>jps
 7360 NettyClient2
 17396
@@ -781,7 +781,7 @@ C:\Users\SnailClimb>jps
 
 `jps -l`:输出主类的全名，如果进程执行的是 Jar 包，输出 Jar 路径。
 
-```
+```shell
 C:\Users\SnailClimb>jps -l
 7360 firstNettyDemo.NettyClient2
 17396
@@ -800,7 +800,7 @@ jstat（JVM Statistics Monitoring Tool） 使用于监视虚拟机各种运行�
 
 **jstat 命令使用格式：**
 
-```
+```shell
 jstat -<option> [-t] [-h<lines>] <vmid> [<interval> [<count>]]
 ```
 
@@ -827,9 +827,10 @@ jstat -<option> [-t] [-h<lines>] <vmid> [<interval> [<count>]]
 
 `jinfo -flag name vmid` :输出对应名称的参数的具体值。比如输出 MaxHeapSize、查看当前 jvm 进程是否开启打印 GC 日志 ( `-XX:PrintGCDetails` :详细 GC 日志模式，这两个都是默认关闭的)。
 
-```
+```shell
 C:\Users\SnailClimb>jinfo  -flag MaxHeapSize 17340
 -XX:MaxHeapSize=2124414976
+
 C:\Users\SnailClimb>jinfo  -flag PrintGC 17340
 -XX:-PrintGC
 ```
@@ -838,7 +839,7 @@ C:\Users\SnailClimb>jinfo  -flag PrintGC 17340
 
 `jinfo -flag [+|-]name vmid` 开启或者关闭对应名称的参数。
 
-```
+```shell
 C:\Users\SnailClimb>jinfo  -flag  PrintGC 17340
 -XX:-PrintGC
 
@@ -856,7 +857,7 @@ C:\Users\SnailClimb>jinfo  -flag  PrintGC 17340
 
 示例：将指定应用程序的堆快照输出到桌面。后面，可以通过 jhat、Visual VM 等工具分析该堆文件。
 
-```
+```shell
 C:\Users\SnailClimb>jmap -dump:format=b,file=C:\Users\SnailClimb\Desktop\heap.hprof 17340
 Dumping heap to C:\Users\SnailClimb\Desktop\heap.hprof ...
 Heap dump file created
@@ -866,7 +867,7 @@ Heap dump file created
 
 **jhat** 用于分析 heapdump 文件，它会建立一个 HTTP/HTML 服务器，让用户可以在浏览器上查看分析结果。
 
-```
+```shell
 C:\Users\SnailClimb>jhat C:\Users\SnailClimb\Desktop\heap.hprof
 Reading from C:\Users\SnailClimb\Desktop\heap.hprof...
 Dump file created Sat May 04 12:30:31 CST 2019
@@ -889,7 +890,7 @@ Server is ready.
 
 **下面是一个线程死锁的代码。我们下面会通过 jstack 命令进行死锁检查，输出死锁信息，找到发生死锁的线程。**
 
-```
+```Java
 public class DeadLockDemo {
     private static Object resource1 = new Object();//资源 1
     private static Object resource2 = new Object();//资源 2
