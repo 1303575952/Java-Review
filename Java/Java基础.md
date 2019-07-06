@@ -38,6 +38,73 @@
 
 好处：维护性、扩展性。
 
+## Java程序初始化的顺序是怎么样的
+
+　　在 Java 语言中，当实例化对象时，对象所在类的所有成员变量首先要进行初始化，只有当所有类成员完成初始化后，才会调用对象所在类的构造函数创建象。
+
+**初始化一般遵循3个原则：**
+
+- 静态对象（变量）优先于非静态对象（变量）初始化，静态对象（变量）只初始化一次，而非静态对象（变量）可能会初始化多次；
+- 父类优先于子类进行初始化；
+- 按照成员变量的定义顺序进行初始化。 即使变量定义散布于方法定义之中，它们依然在任何方法（包括构造函数）被调用之前先初始化；
+
+**加载顺序**
+
+- 父类（静态变量、静态语句块）
+- 子类（静态变量、静态语句块）
+- 父类（实例变量、普通语句块）
+- 父类（构造函数）
+- 子类（实例变量、普通语句块）
+- 子类（构造函数）
+
+**实例**
+
+```Java
+class Base {
+    // 1.父类静态代码块
+    static {
+        System.out.println("Base static block!");
+    }
+    // 3.父类非静态代码块
+    {
+        System.out.println("Base block");
+    }
+    // 4.父类构造器
+    public Base() {
+        System.out.println("Base constructor!");
+    }
+}
+
+public class Derived extends Base {
+    // 2.子类静态代码块
+    static{
+        System.out.println("Derived static block!");
+    }
+    // 5.子类非静态代码块
+    {
+        System.out.println("Derived block!");
+    }
+    // 6.子类构造器
+    public Derived() {
+        System.out.println("Derived constructor!");
+    }
+    public static void main(String[] args) {
+        new Derived();
+    }
+}
+```
+
+结果是：
+
+```
+Base static block!
+Derived static block!
+Base block
+Base constructor!
+Derived block!
+Derived constructor!
+```
+
 ## String, StringBuffer and StringBuilder
 
 **1. 可变性**
@@ -315,6 +382,8 @@ Java程序设计语言对对象采用的不是引用调用，实际上，对象�
 - 一个方法不能让对象参数引用一个新的对象。
 
 ## 反射
+
+当我们的程序在运行时，需要动态的加载一些类，这些类可能之前用不到所以不用加载到 JVM，而是在运行时根据需要才加载。
 
 每个类都有一个 **Class** 对象，包含了与类有关的信息。当编译一个新类时，会产生一个同名的 .class 文件，该文件内容保存着 Class 对象。
 
