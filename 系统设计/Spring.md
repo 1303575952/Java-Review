@@ -1,8 +1,6 @@
 # Spring
 
-## 谈谈自己对于 Spring IoC 和 AOP 的理解
-
-### IoC
+## IoC
 
 IoC（Inverse of Control:控制反转）是一种**设计思想**，就是 **将原本在程序中手动创建对象的控制权，交由Spring框架来管理。** IoC 在其他语言中也有应用，并非 Spirng 特有。 **IoC 容器是 Spring 用来实现 IoC 的载体， IoC 容器实际上就是个Map（key，value）,Map 中存放的是各种对象。**
 
@@ -16,7 +14,7 @@ Spring 时代我们一般通过 XML 文件来配置 Bean，后来开发人员觉
 
 ![SpringIOC的初始化过程](pic/SpringIOC的初始化过程.png)
 
-### AOP
+## AOP
 
 AOP(Aspect-Oriented Programming:面向切面编程)能够将那些与业务无关，**却为业务模块所共同调用的逻辑或责任（例如事务处理、日志管理、权限控制等）封装起来**，便于**减少系统的重复代码**，**降低模块间的耦合度**，并**有利于未来的可拓展性和可维护性**。
 
@@ -27,3 +25,13 @@ AOP(Aspect-Oriented Programming:面向切面编程)能够将那些与业务无�
 当然你也可以使用 AspectJ ,Spring AOP 已经集成了AspectJ ，AspectJ 应该算的上是 Java 生态系统中最完整的 AOP 框架了。
 
 使用 AOP 之后我们可以把一些通用功能抽象出来，在需要用到的地方直接使用即可，这样大大简化了代码量。我们需要增加新功能时也方便，这样也提高了系统扩展性。日志功能、事务管理等等场景都用到了 AOP 。
+
+## Bean的生命周期
+
+1. Spring对Bean进行实例化
+2. Spring将值和Bean的引用注入进Bean对应的属性中
+3. 容器通过Aware接口把容器信息注入Bean
+4. BeanPostProcessor。进行进一步的构造，会在InitialzationBean前后执行对应方法，当前正在初始化的bean对象会被传递进来，我们就可以对这个bean作任何处理
+5. InitializingBean。这一阶段也可以在bean正式构造完成前增加我们自定义的逻辑，但它与前置处理不同，由于该函数并不会把当前bean对象传进来，因此在这一步没办法处理对象本身，只能增加一些额外的逻辑。
+6. DisposableBean。Bean将一直驻留在应用上下文中给应用使用，直到应用上下文被销毁，如果Bean实现了接口，Spring将调用它的destory方法
+
