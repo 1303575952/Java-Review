@@ -914,80 +914,47 @@ synchronized 修饰的方法并没有 monitorenter 指令和 monitorexit 指令�
 
 ### 2. ThreadLocal示例
 
-相信看了上面的解释，大家已经搞懂 ThreadLocal 类是个什么东西了。
+先通过下面这个实例来理解 ThreadLocal 的用法。先声明一个 ThreadLocal 对象，存储布尔类型的数值。然后分别在main线程、Thread1、Thread2中为 ThreadLocal 对象设置不同的数值：
 
 ```Java
-import java.text.SimpleDateFormat;
-import java.util.Random;
+public class ThreadLocalDemo {
+    public static void main(String[] args) {
 
-public class ThreadLocalExample implements Runnable{
+      	// 声明 ThreadLocal对象
+        ThreadLocal<Boolean> mThreadLocal = new ThreadLocal<Boolean>();
 
-     // SimpleDateFormat 不是线程安全的，所以每个线程都要有自己独立的副本
-    private static final ThreadLocal<SimpleDateFormat> formatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd HHmm"));
+        // 在主线程、子线程1、子线程2中去设置访问它的值
+        mThreadLocal.set(true);
 
-    public static void main(String[] args) throws InterruptedException {
-        ThreadLocalExample obj = new ThreadLocalExample();
-        for(int i=0 ; i<10; i++){
-            Thread t = new Thread(obj, ""+i);
-            Thread.sleep(new Random().nextInt(1000));
-            t.start();
-        }
+        System.out.println("Main " + mThreadLocal.get());
+
+        new Thread("Thread#1"){
+            @Override
+            public void run() {
+                mThreadLocal.set(false);
+                System.out.println("Thread#1 " + mThreadLocal.get());
+            }
+        }.start();
+
+        new Thread("Thread#2"){
+            @Override
+            public void run() {
+                System.out.println("Thread#2 " + mThreadLocal.get());
+            }
+        }.start();
     }
-
-    @Override
-    public void run() {
-        System.out.println("Thread Name= "+Thread.currentThread().getName()+" default Formatter = "+formatter.get().toPattern());
-        try {
-            Thread.sleep(new Random().nextInt(1000));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        //formatter pattern is changed here by thread, but it won't reflect to other threads
-        formatter.set(new SimpleDateFormat());
-
-        System.out.println("Thread Name= "+Thread.currentThread().getName()+" formatter = "+formatter.get().toPattern());
-    }
-
 }
 ```
 
-Output:
+打印的结果输出如下所示：
 
 ```
-Thread Name= 0 default Formatter = yyyyMMdd HHmm
-Thread Name= 0 formatter = yy-M-d ah:mm
-Thread Name= 1 default Formatter = yyyyMMdd HHmm
-Thread Name= 2 default Formatter = yyyyMMdd HHmm
-Thread Name= 1 formatter = yy-M-d ah:mm
-Thread Name= 3 default Formatter = yyyyMMdd HHmm
-Thread Name= 2 formatter = yy-M-d ah:mm
-Thread Name= 4 default Formatter = yyyyMMdd HHmm
-Thread Name= 3 formatter = yy-M-d ah:mm
-Thread Name= 4 formatter = yy-M-d ah:mm
-Thread Name= 5 default Formatter = yyyyMMdd HHmm
-Thread Name= 5 formatter = yy-M-d ah:mm
-Thread Name= 6 default Formatter = yyyyMMdd HHmm
-Thread Name= 6 formatter = yy-M-d ah:mm
-Thread Name= 7 default Formatter = yyyyMMdd HHmm
-Thread Name= 7 formatter = yy-M-d ah:mm
-Thread Name= 8 default Formatter = yyyyMMdd HHmm
-Thread Name= 9 default Formatter = yyyyMMdd HHmm
-Thread Name= 8 formatter = yy-M-d ah:mm
-Thread Name= 9 formatter = yy-M-d ah:mm
+MainThread true
+Thread#1 false
+Thread#2 null
 ```
 
-从输出中可以看出，Thread-0已经改变了formatter的值，但仍然是thread-2默认格式化程序与初始化值相同，其他线程也一样。
-
-上面有一段代码用到了创建 `ThreadLocal` 变量的那段代码用到了 Java8 的知识，它等于下面这段代码，如果你写了下面这段代码的话，IDEA会提示你转换为Java8的格式(IDEA真的不错！)。因为ThreadLocal类在Java 8中扩展，使用一个新的方法`withInitial()`，将Supplier功能接口作为参数。
-
-```Java
-private static final ThreadLocal<SimpleDateFormat> formatter = new ThreadLocal<SimpleDateFormat>(){
-        @Override
-        protected SimpleDateFormat initialValue() {
-            return new SimpleDateFormat("yyyyMMdd HHmm");
-        }
-    };
-```
+可以看见，在不同线程对同一个 ThreadLocal对象设置数值，在不同的线程中取出来的值不一样。接下来就分析一下源码，看看其内部结构。
 
 ### 3. ThreadLocal原理
 
