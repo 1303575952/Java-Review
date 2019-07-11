@@ -20,7 +20,7 @@ save 60 10000        #在60秒(1分钟)之后，如果至少有10000个key发生
 
 优点：全量数据快照，文件小，恢复快
 
-缺点：无法保存最近ICI快照之后的数据
+缺点：无法保存最近一次快照之后的数据
 
 ### AOF（append-only file）持久化
 
@@ -51,6 +51,8 @@ appendfsync no        #让操作系统决定何时进行同步
 Redis 4.0 开始支持 RDB 和 AOF 的混合持久化（默认关闭，可以通过配置项 `aof-use-rdb-preamble` 开启）。
 
 如果把混合持久化打开，AOF 重写的时候就直接把 RDB 的内容写到 AOF 文件开头。这样做的好处是可以结合 RDB 和 AOF 的优点, 快速加载同时避免丢失过多的数据。当然缺点也是有的， AOF 里面的 RDB 部分是压缩格式不再是 AOF 格式，可读性较差。
+
+BGSAVE做镜像全量持久化，AOF做增量持久啊。
 
 ## 数据淘汰策略
 
@@ -177,3 +179,35 @@ redis 127.0.0.1:6379> PUBLISH redisChat "Learn redis by runoob.com"
 3) "Learn redis by runoob.com"
 ```
 
+消息发布是无状态的，无法保证可达。
+
+## Redis主从同步
+
+### 全同步过程
+
+* master 执行 bgsave ，在本地生成一份 rdb 快照文件。
+* master node 将 rdb 快照文件发送给 slave node，如果 rdb 复制时间超过 60秒（repl-timeout），那么 slave node 就会认为复制失败，可以适当调大这个参数(对于千兆网卡的机器，一般每秒传输 100MB，6G 文件，很可能超过 60s)
+* master node 在生成 rdb 时，会将所有新的写命令缓存在内存中，在 slave node 保存了 rdb 之后，再将新的写命令复制给 slave node。
+* 如果在复制期间，内存缓冲区持续消耗超过 64MB，或者一次性超过 256MB，那么停止复制，复制失败。
+
+```
+client-output-buffer-limit slave 256MB 64MB 60
+```
+
+- slave node 接收到 rdb 之后，清空自己的旧数据，然后重新加载 rdb 到自己的内存中，同时**基于旧的数据版本**对外提供服务。
+- 如果 slave node 开启了 AOF，那么会立即执行 BGREWRITEAOF，重写 AOF。
+
+### 增量同步过程
+
+- 如果全量复制过程中，master-slave 网络连接断掉，那么 slave 重新连接 master 时，会触发增量复制。
+- master 直接从自己的 backlog 中获取部分丢失的数据，发送给 slave node，默认 backlog 就是 1MB。
+- master 就是根据 slave 发送的 psync 中的 offset 来从 backlog 中获取数据的。
+
+## 哨兵
+
+### 哨兵功能
+
+- 集群监控：负责监控 redis master 和 slave 进程是否正常工作。
+- 消息通知：如果某个 redis 实例有故障，那么哨兵负责发送消息作为报警通知给管理员。
+- 故障转移：如果 master node 挂掉了，会自动转移到 slave node 上。
+- 配置中心：如果故障转移发生了，通知 client 客户端新的 master 地址。
