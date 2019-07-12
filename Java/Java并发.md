@@ -4,6 +4,13 @@
 
 ![线程状态转换](pic/线程状态转换.png)
 
+## sleep和wait的区别
+
+* sleep是Thread类的方法，wait是Object类中定义的方法
+* sleep方法可以在任何地方使用
+* wait只能在synchronized方法或synchronized块中使用
+* sleep只会让出CPU，不会导致锁行为的改变；wait不仅让出CPU，还会释放已经占有的同步资源锁
+
 ## 创建线程
 
 有三种使用线程的方法：
@@ -863,6 +870,8 @@ JDK1.6 对锁的实现引入了大量的优化，如偏向锁、轻量级锁、�
 ## synchronized底层
 
 **synchronized 关键字底层原理属于 JVM 层面。**
+
+Monitor：每个Java对象天生自带了一把看不见的锁
 
 **① synchronized 同步语句块的情况**
 
