@@ -459,6 +459,31 @@ static {
 
 ## 序列化和反序列化
 
+**继承Serializable接口**
+
+`ObjectOutputStream` 的 `writeObject0()` 方法。其部分源码如下：
+
+```Java
+if (obj instanceof String) {
+    writeString((String) obj, unshared);
+} else if (cl.isArray()) {
+    writeArray(obj, desc, unshared);
+} else if (obj instanceof Enum) {
+    writeEnum((Enum<?>) obj, desc, unshared);
+} else if (obj instanceof Serializable) {
+    writeOrdinaryObject(obj, desc, unshared);
+} else {
+    if (extendedDebugInfo) {
+        throw new NotSerializableException(
+            cl.getName() + "\n" + debugInfoStack.toString());
+    } else {
+        throw new NotSerializableException(cl.getName());
+    }
+}
+```
+
+也就是说，`ObjectOutputStream` 在序列化的时候，会判断被序列化的对象是哪一种类型，字符串？数组？枚举？还是 `Serializable`，如果全都不是的话，抛出 `NotSerializableException`。
+
 **序列化ID的作用**
 
 序列化ID起着关键的作用，java的序列化机制是通过在运行时判断类的serialVersionUID来验证版本一致性的。反序列化时，JVM会把传来的字节流中的serialVersionUID与本地实体类中的serialVersionUID进行比较，如果相同则认为是一致的，便可以进行反序列化，否则就会报序列化版本不一致的异常。
