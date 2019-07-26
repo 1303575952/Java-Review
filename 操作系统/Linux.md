@@ -2,7 +2,7 @@
 
 ## 用户态和内核态
 
-![内核态和用户态](C:/Users/imlif/ProjectFiles/Java-Review/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/pic/%E5%86%85%E6%A0%B8%E6%80%81%E5%92%8C%E7%94%A8%E6%88%B7%E6%80%81.png)
+![内核态和用户态](pic/内核态和用户态.png)
 
 ### 概念
 
