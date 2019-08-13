@@ -10,6 +10,80 @@
 * sleep方法可以在任何地方使用
 * wait只能在synchronized方法或synchronized块中使用
 * sleep只会让出CPU，不会导致锁行为的改变；wait不仅让出CPU，还会释放已经占有的同步资源锁
+## 为什么wait只能在synchronized方法或synchronized块中使用
+
+假设我们要自定义一个blocking queue，如果没有使用synchronized的话，我们可能会这样写：
+```Java
+class BlockingQueue {
+    Queue<String> buffer = new LinkedList<String>();
+
+    public void give(String data) {
+        buffer.add(data);
+        notify();                   // Since someone may be waiting in take!
+    }
+
+    public String take() throws InterruptedException {
+        while (buffer.isEmpty())    // 不能用if，因为为了防止虚假唤醒
+            wait();
+        return buffer.remove();
+    }
+}
+```
+这段代码可能会导致如下问题：
+
+* 一个消费者调用take，发现buffer.isEmpty
+* 在消费者调用wait之前，由于cpu的调度，消费者线程被挂起，生产者调用give，然后notify
+* 然后消费者调用wait (注意，由于错误的条件判断，导致wait调用在notify之后，这是关键)
+* 如果很不幸的话，生产者产生了一条消息后就不再生产消息了，那么消费者就会一直挂起，无法消费，造成死锁。
+
+解决这个问题的方法就是：总是让give/notify和take/wait为原子操作。
+
+也就是说wait/notify是线程之间的通信，他们存在竞态，我们必须保证在满足条件的情况下才进行wait。换句话说，如果不加锁的话，那么wait被调用的时候可能wait的条件已经不满足了(如上述)。由于错误的条件下进行了wait，那么就有可能永远不会被notify到，所以我们需要强制wait/notify在synchronized中。
+
+## 为什么wait()一定要放在循环中
+
+在多线程的编程实践中，wait()的使用方法如下：
+
+```Java
+synchronized (monitor) {
+    //  判断条件谓词是否得到满足
+    while(!locked) {
+        //  等待唤醒
+        monitor.wait();
+    }
+    //  处理其他的业务逻辑
+}
+```
+
+那为什么非要while判断，而不采用if判断呢？如下：
+
+```Java
+synchronized (monitor) {
+    //  判断条件谓词是否得到满足
+    if(!locked) {
+        //  等待唤醒
+        monitor.wait();
+    }
+    //  处理其他的业务逻辑
+}
+```
+
+这是因为，如果采用if判断，当线程从wait中唤醒时，那么将直接执行处理其他业务逻辑的代码，但这时候可能出现另外一种可能，条件谓词已经不满足处理业务逻辑的条件了，从而出现错误的结果，于是有必要进行再一次判断，如下：
+
+```Java
+synchronized (monitor) {
+    //  判断条件谓词是否得到满足
+    if(!locked) {
+        //  等待唤醒
+        monitor.wait();
+        if(locked) {
+            //  处理其他的业务逻辑
+        } else {
+            //  跳转到monitor.wait(); 
+        }
+    }
+}
+```
 
 ## 创建线程
 
@@ -573,7 +647,7 @@ synchronized 是 JVM 实现的，而 ReentrantLock 是 JDK 实现的。
 
 **2. 性能**
 
-新版本 Java 对 synchronized 进行了很多优化，例如自旋锁等，synchronized 与 ReentrantLock 大致相同。
+新版本 Java 对 synchronized 进行了很多优化，例如自旋锁等，synchronized 与 ReentrantLock 性能大致相同。
 
 **3. 等待可中断**
 
@@ -772,9 +846,9 @@ produce..produce..consume..consume..produce..consume..produce..consume..produce.
 
 互斥同步属于一种悲观的并发策略，总是认为只要不去做正确的同步措施，那就肯定会出现问题。无论共享数据是否真的会出现竞争，它都要进行加锁（这里讨论的是概念模型，实际上虚拟机会优化掉很大一部分不必要的加锁）、用户态核心态转换、维护锁计数器和检查是否有被阻塞的线程需要唤醒等操作。
 
-### 1. CAS
-
 随着硬件指令集的发展，我们可以使用基于冲突检测的乐观并发策略：先进行操作，如果没有其它线程争用共享数据，那操作就成功了，否则采取补偿措施（不断地重试，直到成功为止）。这种乐观的并发策略的许多实现都不需要将线程阻塞，因此这种同步操作称为非阻塞同步。
+
+### 1. CAS
 
 乐观锁需要操作和冲突检测这两个步骤具备原子性，这里就不能再使用互斥同步来保证了，只能靠硬件来完成。硬件支持的原子性操作最典型的是：比较并交换（Compare-and-Swap，CAS）。CAS 指令需要有 3 个操作数，分别是内存地址 V、旧的预期值 A 和新值 B。当执行操作时，只有当 V 的值等于 A，才将 V 的值更新为 B。
 
@@ -1057,51 +1131,6 @@ Java 内存模型定义了 8 个操作来完成主内存和工作内存的交互
 - write：在 store 之后执行，把 store 得到的值放入主内存的变量中
 - lock：作用于主内存的变量
 - unlock
-
-## 为什么wait()一定要放在循环中
-
-在多线程的编程实践中，wait()的使用方法如下：
-
-```Java
-synchronized (monitor) {
-    //  判断条件谓词是否得到满足
-    while(!locked) {
-        //  等待唤醒
-        monitor.wait();
-    }
-    //  处理其他的业务逻辑
-}
-```
-
-那为什么非要while判断，而不采用if判断呢？如下：
-
-```Java
-synchronized (monitor) {
-    //  判断条件谓词是否得到满足
-    if(!locked) {
-        //  等待唤醒
-        monitor.wait();
-    }
-    //  处理其他的业务逻辑
-}
-```
-
-这是因为，如果采用if判断，当线程从wait中唤醒时，那么将直接执行处理其他业务逻辑的代码，但这时候可能出现另外一种可能，条件谓词已经不满足处理业务逻辑的条件了，从而出现错误的结果，于是有必要进行再一次判断，如下：
-
-```Java
-synchronized (monitor) {
-    //  判断条件谓词是否得到满足
-    if(!locked) {
-        //  等待唤醒
-        monitor.wait();
-        if(locked) {
-            //  处理其他的业务逻辑
-        } else {
-            //  跳转到monitor.wait(); 
-        }
-    }
-}
-```
 
 ## 乐观锁的缺点
 
