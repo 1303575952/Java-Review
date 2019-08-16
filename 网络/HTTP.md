@@ -1,5 +1,15 @@
 # HTTP
 
+## HTTP请求和响应报文
+
+### 请求报文
+
+![请求报文](pic/HTTP_RequestMessageExample.png)
+
+### 响应报文
+
+![响应报文](pic/HTTP_ResponseMessageExample.png)
+
 ## HTTP1.0和HTTP1.1
 
 1. **长连接** : **在HTTP/1.0中，默认使用的是短连接**，也就是说每次请求都要重新建立一次连接。HTTP 是基于TCP/IP协议的,每一次建立或者断开连接都需要三次握手四次挥手的开销，如果每次请求都要这样的话，开销会比较大。因此最好能维持一个长连接，可以用个长连接来发多个请求。**HTTP 1.1起，默认使用长连接** ,默认开启Connection： keep-alive。
@@ -215,13 +225,16 @@ DELETE /idX/delete HTTP/1.1   -> Returns 404
 * 2xx：成功--表示请求已被成功接收、理解、接受
   * 200 OK：正常返回信息
 * 3xx：重定向--要完成请求必须进行更进一步操作
+  * 301 Moved Permanently：永久移动
+  * 302 Found：临时移动
 * 4xx：客户端错误--请求有语法错误或请求无法实现
   * 400 Bad Request：客户端请求有语法错误，不能被服务器理解
   * 401 Unauthorized：请求未经授权，这个状态码必须和WWW-Authenticate报头域一起使用
   * 403 Forbidden：服务器收到请求，但拒绝提供服务
   * 404 Not Found：请求资源不存在
 * 5xx：服务器端错误--服务器未能实现合法的请求
-  * 500 Internal Server Error：服务器发生不可预期的错误
+  * 500 Internal Server Error：服务器内部错误
+  * 502 Bad Gateway：作为网关或者代理工作的服务器尝试执行请求时，从远程服务器接收到了一个无效的响应
   * 503 Server Unavailable：服务器当前不可处理客户端请求，一段时间后可能回复正常
 
 ## Cookie和Session
