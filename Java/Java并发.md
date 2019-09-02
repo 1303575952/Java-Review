@@ -4,8 +4,9 @@
 
 ![线程状态转换](pic/线程状态转换.png)
 
-## sleep和wait的区别
+## yield、sleep和wait的区别
 
+* 对静态方法 Thread.yield() 的调用声明了当前线程已经完成了生命周期中最重要的部分，可以切换给其它线程来执行。该方法只是对线程调度器的一个建议，而且也只是建议具有相同优先级的其它线程可以运行。
 * sleep是Thread类的方法，wait是Object类中定义的方法
 * sleep方法可以在任何地方使用
 * wait只能在synchronized方法或synchronized块中使用
