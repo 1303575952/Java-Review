@@ -431,9 +431,10 @@ G1 把堆划分成多个大小相等的独立区域（Region），新生代和�
 
 ## 内存分配与回收策略
 
-### Minor GC 和 Full GC
+### Minor GC、Major GC 和 Full GC
 
 - Minor GC：回收新生代，因为新生代对象存活时间很短，因此 Minor GC 会频繁执行，执行的速度一般也会比较快。
+- Major GC：回收老年代。
 - Full GC：回收老年代和新生代，老年代对象其存活时间长，因此 Full GC 很少执行，执行速度会比 Minor GC 慢很多。
 
 ### 内存分配策略
