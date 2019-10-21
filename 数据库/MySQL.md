@@ -733,6 +733,12 @@ select * from table_name inner join ( select id from table_name where (user = xx
 - 崩溃恢复：MyISAM 崩溃后发生损坏的概率比 InnoDB 高很多，而且恢复的速度也更慢。
 - 其它特性：MyISAM 支持压缩表和空间数据索引。
 
+### 很多情况下MyISAM读比InnoDB快
+
+* InnoDB要缓存数据，MyISAM只缓存索引，MyISAM换进换出相对会少。
+* InnoDB寻址先映射到块再到行，MyISAM记录文件的offset，定位相对较快。
+* InnoDB支持事务，需要维护MVCC。
+
 ### 适用场景
 
 **MyISAM**
