@@ -10,7 +10,7 @@
 
 #### Set
 
-- TreeSet：基于红黑树实现，支持有序性操作，例如根据一个范围查找元素的操作。但是查找效率不如 HashSet，HashSet 查找的时间复杂度为 O(1)，TreeSet 则为 O(logN)。
+- TreeSet：基于红黑树实现，支持元素大小有序，例如根据一个范围查找元素的操作。但是查找效率不如 HashSet，HashSet 查找的时间复杂度为 O(1)，TreeSet 则为 O(logN)。
 - HashSet：基于哈希表实现，支持快速查找，但不支持有序性操作。并且失去了元素的插入顺序信息，也就是说使用 Iterator 遍历 HashSet 得到的结果是不确定的。
 - LinkedHashSet：具有 HashSet 的查找效率，且内部使用双向链表维护元素的插入顺序。
 
@@ -27,12 +27,12 @@
 
 ### Map
 
-[![Collection结构](pic/Map结构.png)](https://github.com/CyC2018/CS-Notes/blob/master/notes/pics/774d756b-902a-41a3-a3fd-81ca3ef688dc.png)
+[![Collection结构](pic/Map结构.png)]
 
-- TreeMap：基于红黑树实现。
-- HashMap：基于哈希表实现。
+- TreeMap：基于红黑树实现。TreeMap实现SortedMap接口，能够把它保存的记录根据键排序，默认是按键值的升序排序，也可以指定排序的比较器，当用Iterator遍历TreeMap时，得到的记录是排过序的。如果使用排序的映射，建议使用TreeMap。在使用TreeMap时，key必须实现Comparable接口或者在构造TreeMap传入自定义的Comparator，否则会在运行时抛出java.lang.ClassCastException类型的异常。
+- HashMap：基于哈希表实现。HashMap最多只允许一条记录的键为null，允许多条记录的值为null。HashMap非线程安全，即任一时刻可以有多个线程同时写HashMap，可能会导致数据的不一致。如果需要满足线程安全，可以用 Collections的synchronizedMap方法使HashMap具有线程安全的能力，或者使用ConcurrentHashMap。
 - HashTable：和 HashMap 类似，但它是线程安全的，这意味着同一时刻多个线程可以同时写入 HashTable 并且不会导致数据不一致。它是遗留类，不应该去使用它。现在可以使用 ConcurrentHashMap 来支持线程安全，并且 ConcurrentHashMap 的效率会更高，因为 ConcurrentHashMap 引入了分段锁。
-- LinkedHashMap：使用双向链表来维护元素的顺序，顺序为插入顺序或者最近最少使用（LRU）顺序。
+- LinkedHashMap：使用双向链表来维护元素的顺序，顺序为插入顺序或者最近最少使用（LRU）顺序（在构造时带参数）。
 
 ## 比较器Comparable和Comparator的区别
 
@@ -168,28 +168,6 @@ Output：
 
 在使用迭代器对集合对象进行遍历的时候，如果 A 线程正在对集合进行遍历，此时 B 线程对集合进行修改（**增加、删除、修改**），或者 A 线程在遍历过程中对集合进行修改，都会导致 A 线程抛出 ConcurrentModificationException 异常。
 
-具体效果我们看下代码：
-
-```Java
-HashMap hashMap = new HashMap();
-hashMap.put("不只Java-1", 1);
-hashMap.put("不只Java-2", 2);
-hashMap.put("不只Java-3", 3);
-Set set = hashMap.entrySet();
-Iterator iterator = set.iterator();
-while (iterator.hasNext()) {
-	System.out.println(iterator.next());
-	hashMap.put("下次循环会抛异常", 4);
-	System.out.println("此时 hashMap 长度为" + hashMap.size());
-}  
-```
-
-执行后的效果如下图：
-
-![快速失败执行结果](pic/快速失败执行结果.png)
-
-为什么在用迭代器遍历时，修改集合就会抛异常时？
-
 原因是迭代器在遍历时直接访问集合中的内容，并且在遍历过程中使用一个 modCount 变量。集合在被遍历期间如果内容发生变化，就会改变 modCount 的值。
 
 每当迭代器使用 hashNext()/next() 遍历下一个元素之前，都会检测 modCount 变量是否为 expectedModCount 值，是的话就返回遍历；否则抛出异常，终止遍历。
@@ -200,26 +178,7 @@ while (iterator.hasNext()) {
 
 采用安全失败机制的集合容器，在遍历时不是直接在集合内容上访问的，而是先复制原有集合内容，在拷贝的集合上进行遍历。
 
-由于迭代时是对原集合的拷贝进行遍历，所以在遍历过程中对原集合所作的修改并不能被迭代器检测到，故不会抛 ConcurrentModificationException 异常
-
-我们上代码看下是不是这样
-
-```Java
-ConcurrentHashMap concurrentHashMap = new ConcurrentHashMap();     concurrentHashMap.put("不只Java-1", 1);
-concurrentHashMap.put("不只Java-2", 2);
-concurrentHashMap.put("不只Java-3", 3);
-Set set = concurrentHashMap.entrySet();
-Iterator iterator = set.iterator();
-while (iterator.hasNext()) {
-	System.out.println(iterator.next());
-	concurrentHashMap.put("下次循环正常执行", 4);
-}
-System.out.println("程序结束"); 
-```
-
-运行效果如下，的确不会抛异常，程序正常执行。
-
-![安全失败执行结果](pic/安全失败执行结果.png)
+由于迭代时是对原集合的拷贝进行遍历，所以在遍历过程中对原集合所作的修改并不能被迭代器检测到，故不会抛 ConcurrentModificationException 异常。
 
 最后说明一下，**快速失败和安全失败是对迭代器而言的**。并发环境下建议使用 java.util.concurrent 包下的容器类，除非没有修改操作。
 
@@ -230,28 +189,6 @@ System.out.println("程序结束");
 HashMap是Java程序员使用频率最高的用于映射(键值对)处理的数据类型。随着JDK（Java Developmet Kit）版本的更新，JDK1.8对HashMap底层的实现进行了优化，例如引入红黑树的数据结构和扩容的优化等。本文结合JDK1.7和JDK1.8的区别，深入探讨HashMap的结构实现和功能原理。
 
 ### 简介
-
-Java为数据结构中的映射定义了一个接口java.util.Map，此接口主要有四个常用的实现类，分别是HashMap、Hashtable、LinkedHashMap和TreeMap，类继承关系如下图所示：
-
-![HashMap-Map结构](pic/HashMap-Map结构.png)
-
-下面针对各个实现类的特点做一些说明：
-
-(1) HashMap：它根据键的hashCode值存储数据，大多数情况下可以直接定位到它的值，因而具有很快的访问速度，但遍历顺序却是不确定的。 HashMap最多只允许一条记录的键为null，允许多条记录的值为null。HashMap非线程安全，即任一时刻可以有多个线程同时写HashMap，可能会导致数据的不一致。如果需要满足线程安全，可以用 Collections的synchronizedMap方法使HashMap具有线程安全的能力，或者使用ConcurrentHashMap。
-
-(2) Hashtable：Hashtable是遗留类，很多映射的常用功能与HashMap类似，不同的是它承自Dictionary类，并且是线程安全的，任一时间只有一个线程能写Hashtable，并发性不如ConcurrentHashMap，因为ConcurrentHashMap引入了分段锁。Hashtable不建议在新代码中使用，不需要线程安全的场合可以用HashMap替换，需要线程安全的场合可以用ConcurrentHashMap替换。
-
-(3) LinkedHashMap：LinkedHashMap是HashMap的一个子类，保存了记录的插入顺序，在用Iterator遍历LinkedHashMap时，先得到的记录肯定是先插入的，也可以在构造时带参数，按照访问次序排序。
-
-(4) TreeMap：TreeMap实现SortedMap接口，能够把它保存的记录根据键排序，默认是按键值的升序排序，也可以指定排序的比较器，当用Iterator遍历TreeMap时，得到的记录是排过序的。如果使用排序的映射，建议使用TreeMap。在使用TreeMap时，key必须实现Comparable接口或者在构造TreeMap传入自定义的Comparator，否则会在运行时抛出java.lang.ClassCastException类型的异常。
-
-对于上述四种Map类型的类，要求映射中的key是不可变对象。不可变对象是该对象在创建后它的哈希值不会被改变。如果对象的哈希值发生变化，Map对象很可能就定位不到映射的位置了。
-
-通过上面的比较，我们知道了HashMap是Java的Map家族中一个普通成员，鉴于它可以满足大多数场景的使用条件，所以是使用频度最高的一个。下文我们主要结合源码，从存储结构、常用方法分析、扩容以及安全性等方面深入讲解HashMap的工作原理。
-
-**内部实现**
-
-搞清楚HashMap，首先需要知道HashMap是什么，即它的存储结构-字段；其次弄明白它能干什么，即它的功能实现-方法。下面我们针对这两个方面详细展开讲解。
 
 **存储结构-字段**
 
@@ -541,34 +478,6 @@ e.next = newTable[i] 导致 key(3).next 指向了 key(7)。注意：此时的key
 
 HashMap中，如果key经过hash算法得出的数组索引位置全部不相同，即Hash算法非常好，那样的话，getKey方法的时间复杂度就是O(1)，如果Hash算法技术的结果碰撞非常多，假如Hash算极其差，所有的Hash算法结果得出的索引位置一样，那样所有的键值对都集中到一个桶中，或者在一个链表中，或者在一个红黑树中，时间复杂度分别为O(n)和O(lgn)。 鉴于JDK1.8做了多方面的优化，总体性能优于JDK1.7，下面我们从两个方面用例子证明这一点。
 
-### 小结
-
-(1) 扩容是一个特别耗性能的操作，所以当程序员在使用HashMap的时候，估算map的大小，初始化的时候给一个大致的数值，避免map进行频繁的扩容。
-
-(2) 负载因子是可以修改的，也可以大于1，但是建议不要轻易修改，除非情况非常特殊。
-
-(3) HashMap是线程不安全的，不要在并发的环境中同时操作HashMap，建议使用ConcurrentHashMap。
-
-(4) JDK1.8引入红黑树大程度优化了HashMap的性能。
-
-(5) 还没升级JDK1.8的，现在开始升级吧。HashMap的性能提升仅仅是JDK1.8的冰山一角。
-
-### 参考
-
-1、JDK1.7&JDK1.8 源码。
-
-2、CSDN博客频道，HashMap多线程死循环问题，2014。
-
-3、红黑联盟，Java类集框架之HashMap(JDK1.8)源码剖析，2015。
-
-4、CSDN博客频道， 教你初步了解红黑树，2010。
-
-5、Java Code Geeks，HashMap performance improvements in Java 8，2014。
-
-6、Importnew，危险！在HashMap中将可变对象用作Key，2014。
-
-7、CSDN博客频道，为什么一般hashtable的桶数会取一个素数，2013。
-
 ## LinkedHashMap
 
 以下是使用 LinkedHashMap 实现的一个 LRU 缓存：
@@ -651,75 +560,13 @@ static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
 **size 操作**
 
-每个 Segment 维护了一个 count 变量来统计该 Segment 中的键值对个数。
-
-```Java
-/**
- * The number of elements. Accessed only either within locks
- * or among other volatile reads that maintain visibility.
- */
-transient int count;
-```
-
-在执行 size 操作时，需要遍历所有 Segment 然后把 count 累计起来。
+每个 Segment 维护了一个 count 变量来统计该 Segment 中的键值对个数。在执行 size 操作时，需要遍历所有 Segment 然后把 count 累计起来。
 
 ConcurrentHashMap 在执行 size 操作时先尝试不加锁，如果连续两次不加锁操作得到的结果一致，那么可以认为这个结果是正确的。
 
 尝试次数使用 RETRIES_BEFORE_LOCK 定义，该值为 2，retries 初始值为 -1，因此尝试次数为 3。
 
 如果尝试的次数超过 3 次，就需要对每个 Segment 加锁。
-
-```Java
-/**
- * Number of unsynchronized retries in size and containsValue
- * methods before resorting to locking. This is used to avoid
- * unbounded retries if tables undergo continuous modification
- * which would make it impossible to obtain an accurate result.
- */
-static final int RETRIES_BEFORE_LOCK = 2;
-
-public int size() {
-    // Try a few times to get accurate count. On failure due to
-    // continuous async changes in table, resort to locking.
-    final Segment<K,V>[] segments = this.segments;
-    int size;
-    boolean overflow; // true if size overflows 32 bits
-    long sum;         // sum of modCounts
-    long last = 0L;   // previous sum
-    int retries = -1; // first iteration isn't retry
-    try {
-        for (;;) {
-            // 超过尝试次数，则对每个 Segment 加锁
-            if (retries++ == RETRIES_BEFORE_LOCK) {
-                for (int j = 0; j < segments.length; ++j)
-                    ensureSegment(j).lock(); // force creation
-            }
-            sum = 0L;
-            size = 0;
-            overflow = false;
-            for (int j = 0; j < segments.length; ++j) {
-                Segment<K,V> seg = segmentAt(segments, j);
-                if (seg != null) {
-                    sum += seg.modCount;
-                    int c = seg.count;
-                    if (c < 0 || (size += c) < 0)
-                        overflow = true;
-                }
-            }
-            // 连续两次得到的结果一致，则认为这个结果是正确的
-            if (sum == last)
-                break;
-            last = sum;
-        }
-    } finally {
-        if (retries > RETRIES_BEFORE_LOCK) {
-            for (int j = 0; j < segments.length; ++j)
-                segmentAt(segments, j).unlock();
-        }
-    }
-    return overflow ? Integer.MAX_VALUE : size;
-}
-```
 
 **JDK 1.8 的改动**
 
