@@ -186,7 +186,7 @@ Output：
 
 ### 摘要
 
-HashMap是Java程序员使用频率最高的用于映射(键值对)处理的数据类型。随着JDK（Java Developmet Kit）版本的更新，JDK1.8对HashMap底层的实现进行了优化，例如引入红黑树的数据结构和扩容的优化等。本文结合JDK1.7和JDK1.8的区别，深入探讨HashMap的结构实现和功能原理。
+HashMap是Java程序员使用频率最高的用于映射(键值对)处理的数据类型。随着JDK版本的更新，JDK1.8对HashMap底层的实现进行了优化，例如引入红黑树的数据结构和扩容的优化等。
 
 ### 简介
 
@@ -232,10 +232,10 @@ Node是HashMap的一个内部类，实现了Map.Entry接口，本质是就是一
 在理解Hash和扩容流程之前，我们得先了解下HashMap的几个字段。从HashMap的默认构造函数源码可知，构造函数就是对下面几个字段进行初始化，源码如下：
 
 ```Java
-int threshold;             // 所能容纳的key-value对极限 
-final float loadFactor;    // 负载因子
-int modCount;  
-int size;  
+int threshold;             //所能容纳的key-value对极限 
+final float loadFactor;    //负载因子
+int modCount;  			   //记录HashMap内部结构发生变化的次数
+int size;				   //HashMap中实际存在的键值对数量
 ```
 
 首先，Node[] table的初始化长度length(默认值是16)，Load factor为负载因子(默认值是0.75)，threshold是HashMap所能容纳的最大数据量的Node(键值对)个数。threshold = length * Load factor。也就是说，在数组定义好长度之后，负载因子越大，所能容纳的键值对个数越多。
@@ -292,9 +292,7 @@ HashMap的put方法执行过程可以通过下图来理解，自己有兴趣可�
 
 ②.根据键值key计算hash值得到插入的数组索引i，如果table[i]==null，直接新建节点添加，转向⑥，如果table[i]不为空，转向③；
 
-③.判断table[i]的首个元素是否和key一样，如果相同直接覆盖value，否则转向
-
-④，这里的相同指的是hashCode以及equals；
+③.判断table[i]的首个元素是否和key一样，如果相同直接覆盖value，否则转向④，这里的相同指的是hashCode以及equals；
 
 ④.判断table[i] 是否为treeNode，即table[i] 是否是红黑树，如果是红黑树，则直接在树中插入键值对，否则转向⑤；
 
@@ -458,7 +456,7 @@ public class HashMapInfiniteLoop {
 
 其中，map初始化为一个长度为2的数组，loadFactor=0.75，threshold=2*0.75=1，也就是说当put第二个key的时候，map就需要进行resize。
 
-通过设置断点让线程1和线程2同时debug到transfer方法(3.3小节代码块)的首行。注意此时两个线程已经成功添加数据。放开thread1的断点至transfer方法的“Entry next = e.next;” 这一行；然后放开线程2的的断点，让线程2进行resize。结果如下图。
+通过设置断点让线程1和线程2同时debug到transfer方法的首行。注意此时两个线程已经成功添加数据。放开thread1的断点至transfer方法的“Entry next = e.next;” 这一行；然后放开线程2的的断点，让线程2进行resize。结果如下图。
 
 ![HashMap环1](pic/HashMap环1.png)
 
@@ -472,11 +470,11 @@ e.next = newTable[i] 导致 key(3).next 指向了 key(7)。注意：此时的key
 
 ![HashMap环3](pic/HashMap环3.png)
 
-于是，当我们用线程一调用map.get(11)时，悲剧就出现了——Infinite Loop。
+于是，当我们用线程一调用map.get(11)时，悲剧就出现了——Infinite Loop。这种情况下死循环发生的根本原因在于头插的方式变化了同种链表节点的顺序。
 
 **JDK1.8与JDK1.7的性能对比**
 
-HashMap中，如果key经过hash算法得出的数组索引位置全部不相同，即Hash算法非常好，那样的话，getKey方法的时间复杂度就是O(1)，如果Hash算法技术的结果碰撞非常多，假如Hash算极其差，所有的Hash算法结果得出的索引位置一样，那样所有的键值对都集中到一个桶中，或者在一个链表中，或者在一个红黑树中，时间复杂度分别为O(n)和O(lgn)。 鉴于JDK1.8做了多方面的优化，总体性能优于JDK1.7，下面我们从两个方面用例子证明这一点。
+hash碰撞的情况下，多个键值对都集中到一个桶中，或者在一个链表中，或者在一个红黑树中，时间复杂度分别为O(n)和O(lgn)。 鉴于JDK1.8做了多方面的优化，总体性能优于JDK1.7。
 
 ## LinkedHashMap
 
